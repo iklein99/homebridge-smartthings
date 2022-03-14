@@ -1,16 +1,16 @@
 {
   "private": true,
-  "displayName": "Plugin Name",
-  "name": "homebridge-plugin-name",
+  "displayName": "SmartThings Plugin",
+  "name": "@iklein99/homebridge-smartthings",
   "version": "1.0.0",
-  "description": "A short description about what your plugin does.",
+  "description": "Will find all devices and allow them to be controlled from Home.",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git://github.com/USERNAME/GITHUB_PROJECT_NAME.git"
+    "url": "https://github.com/iklein99/homebridge-smartthings.git"
   },
   "bugs": {
-    "url": "https://github.com/USERNAME/GITHUB_PROJECT_NAME/issues"
+    "url": "https://github.com/iklein99/homebridge-smartthings/issues"
   },
   "engines": {
     "node": ">=14.18.1",
