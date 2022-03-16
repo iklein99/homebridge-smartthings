@@ -1,7 +1,7 @@
 {
   "private": true,
   "displayName": "SmartThings Plugin",
-  "name": "@iklein99/homebridge-smartthings",
+  "name": "homebridge-smartthings-ik",
   "version": "1.0.0",
   "description": "Will find all devices and allow them to be controlled from Home.",
   "license": "Apache-2.0",
