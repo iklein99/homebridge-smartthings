@@ -1,5 +1,4 @@
 import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
-import { callbackify } from 'util';
 import { BasePlatformAccessory } from './basePlatformAccessory';
 import { IKHomeBridgeHomebridgePlatform } from './platform';
 

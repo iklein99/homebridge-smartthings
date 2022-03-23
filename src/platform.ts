@@ -7,7 +7,6 @@ import axios = require('axios');
 import { BasePlatformAccessory } from './basePlatformAccessory';
 import { FanPlatformAccessory } from './fanAccessory';
 import { GarageDoorPlatformAccessory } from './garageDoorAccessory';
-import { access } from 'fs';
 
 /**
  * HomebridgePlatform
