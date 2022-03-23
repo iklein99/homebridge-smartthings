@@ -4,13 +4,25 @@
   "singular": true,
   "schema": {
     "type": "object",
-    "properties": {
-      "name": {
+    "properties": [
+      {"name": {
         "title": "Name",
         "type": "string",
         "required": true,
-        "default": "Example Dynamic Platform"
+        "default": "Example Dynamic Platform"}
+      },
+      {"baseURL": {
+        "title": "BaseURL",
+        "type": "string",
+        "required": false,
+        "default": "https://api.smartthings.com/v1/"}
+      },
+      {"key": {
+        "title": "Key",
+        "type": "string",
+        "required": true,
+        "default": ""}
       }
-    }
+    ]
   }
 }
