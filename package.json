@@ -1,5 +1,5 @@
 {
-  "private": true,
+  "private": false,
   "displayName": "SmartThings Plugin",
   "name": "homebridge-smartthings-ik",
   "version": "1.0.0",
