@@ -17,11 +17,17 @@
         "required": false,
         "default": "https://api.smartthings.com/v1/"}
       },
-      {"key": {
-        "title": "Key",
+      {"accessToken": {
+        "title": "AccessToken",
         "type": "string",
         "required": true,
         "default": ""}
+      },
+      {"garageDoorMaxPoll": {
+        "title": "GarageDoorMaxPoll",
+        "type": "int",
+        "required": true,
+        "default": 40}
       }
     ]
   }

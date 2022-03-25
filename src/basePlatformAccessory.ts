@@ -38,7 +38,7 @@ export abstract class BasePlatformAccessory {
     this.name = accessory.context.device.label;
     this.log = platform.log;
     this.baseURL = platform.config.BaseURL;
-    this.key = platform.config.Key;
+    this.key = platform.config.AccessToken;
     this.api = platform.api;
     const headerDict = { 'Authorization': 'Bearer: ' + this.key };
 

@@ -12,7 +12,7 @@ export class GarageDoorPlatformAccessory extends BasePlatformAccessory {
   private service: Service;
   private intervalId;
   private getStatusTryCount = 0;
-  private  MAX_POLLING_COUNT = 30;  // 30 seconds
+  // private  MAX_POLLING_COUNT = 30;  // 30 seconds
   // private platform: IKHomeBridgeHomebridgePlatform;
 
   // private log: Logger;
@@ -38,6 +38,7 @@ export class GarageDoorPlatformAccessory extends BasePlatformAccessory {
     // set the service name, this is what is displayed as the default name on the Home app
     // in this example we are using the name we stored in the `accessory.context` in the `discoverDevices` method.
     this.service.setCharacteristic(platform.Characteristic.Name, accessory.context.device.label);
+    // this.service.displayName = accessory.context.device.label;
 
     // each service must implement at-minimum the "required characteristics" for the given service type
     // see https://developers.homebridge.io/#/service/Lightbulb
@@ -116,7 +117,7 @@ export class GarageDoorPlatformAccessory extends BasePlatformAccessory {
     });
 
     // Increment the count of tries.  If exceeded, then quit.
-    if (++ t.getStatusTryCount > t.MAX_POLLING_COUNT) {
+    if (++ t.getStatusTryCount > t.platform.config.GarageDoorMaxPoll) {
       t.log.error('Polling door status for ' + t.name + ' max count exceeded');
       clearInterval(t.intervalId);
     }

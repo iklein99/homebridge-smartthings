@@ -45,6 +45,10 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
 
       // REMOVE ME
       // this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, this.accessories);
+      // let acc;
+      // while ((acc = this.accessories.pop()) !== undefined) {
+      //   this.log.debug('Cleared ' + acc.displayName);
+      // }
 
       this.getOnlineDevices().then((devices) => {
         this.discoverDevices(devices);
@@ -69,7 +73,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
 
     const command = 'devices';
     const headerDict = {
-      'Authorization': 'Bearer: ' + this.config.Key,
+      'Authorization': 'Bearer: ' + this.config.AccessToken,
     };
     const devices: Array<object> = [];
 
