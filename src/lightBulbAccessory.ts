@@ -134,7 +134,7 @@ export class LightbulbPlatformAccessory extends BasePlatformAccessory {
             value,
           ],
       }]);
-      this.axInstance.post(this.commandURL, commandBody).then(res => {
+      this.axInstance.post(this.commandURL, commandBody).then(() => {
         this.log.debug('setLevel(' + value + ') SUCCESSFUL for ' + this.name);
         resolve();
       }).catch((error) => {
