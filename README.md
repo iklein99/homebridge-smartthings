@@ -14,9 +14,21 @@ from your smarttthings network.  This is currently under development.
 
 ## Device types supported
 
-Currently, the following have been implemented, because that is what I have access to in my home.  If you have other 
-types you would like me to add, contact me at iklein99@comcast.net.
+Currently, the following have been implemented, because that is what I have access to in my home.  Support Switch, Lightbulb, Fan,
+Garage Door Opener.
 
 ## How to configure
 
-TBD.
+You will need to create a Smartthings personal access token.  You can do that here: https://account.smartthings.com/tokens.  Create a
+new token and make sure it has all of the device permissions.  Save your token and add it to the configuration.
+<br>
+This section should be added to the platforms array:
+<pre>
+        {
+            "Name": "Smartthings Plugin",
+            "AccessToken": <INSERT YOUR PERSONAL ACCESS TOKEN HERE IN QUOTES>,
+            "BaseURL": "https://api.smartthings.com/v1",
+            "GarageDoorMaxPoll": 40,
+            "platform": "HomeBridgeSmartThings"
+        }
+</pre>
