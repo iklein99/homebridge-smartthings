@@ -83,7 +83,7 @@ export class FanPlatformAccessory extends BasePlatformAccessory {
    *
    * If your device takes time to respond you should update the status of your device
    * asynchronously instead using the `updateCharacteristic` method instead.
- 
+
    * @example
    * this.service.updateCharacteristic(this.platform.Characteristic.On, true)
    */
@@ -134,7 +134,7 @@ export class FanPlatformAccessory extends BasePlatformAccessory {
             value,
           ],
       }]);
-      this.axInstance.post(this.commandURL, commandBody).then(res => {
+      this.axInstance.post(this.commandURL, commandBody).then(() => {
         this.log.debug('setLevel(' + value + ') SUCCESSFUL for ' + this.name);
         resolve();
       }).catch((error) => {

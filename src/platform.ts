@@ -44,7 +44,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
       // run the method to discover / register your devices as accessories
 
       // REMOVE ME
-     // this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, this.accessories);
+      // this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, this.accessories);
 
       this.getOnlineDevices().then((devices) => {
         this.discoverDevices(devices);

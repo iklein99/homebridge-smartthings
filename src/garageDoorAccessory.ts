@@ -3,8 +3,6 @@ import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
 import { BasePlatformAccessory } from './basePlatformAccessory';
 import { IKHomeBridgeHomebridgePlatform } from './platform';
 
-enum doorActivity {CLOSING = 0, OPENING = 1}
-
 /**
  * Platform Accessory
  * An instance of this class is created for each accessory your platform registers
