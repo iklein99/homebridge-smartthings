@@ -26,7 +26,7 @@ This section should be added to the platforms array:
 <pre>
         {
             "Name": "Smartthings Plugin",
-            "AccessToken": <INSERT YOUR PERSONAL ACCESS TOKEN HERE IN QUOTES>,
+            "AccessToken": "INSERT YOUR PERSONAL ACCESS TOKEN HERE",
             "BaseURL": "https://api.smartthings.com/v1",
             "GarageDoorMaxPoll": 40,
             "platform": "HomeBridgeSmartThings"
