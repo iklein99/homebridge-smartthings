@@ -2,7 +2,7 @@
   "private": false,
   "displayName": "SmartThings Plugin",
   "name": "homebridge-smartthings-ik",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Will find all devices and allow them to be controlled from Home.",
   "license": "Apache-2.0",
   "repository": {
