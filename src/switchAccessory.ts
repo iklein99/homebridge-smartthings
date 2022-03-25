@@ -1,4 +1,4 @@
-import { Service, PlatformAccessory, CharacteristicValue} from 'homebridge';
+import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
 import { BasePlatformAccessory } from './basePlatformAccessory';
 import { IKHomeBridgeHomebridgePlatform } from './platform';
 
@@ -48,24 +48,22 @@ export class SwitchPlatformAccessory extends BasePlatformAccessory {
    */
   async setOn(value: CharacteristicValue) {
 
+    this.log.debug('Received onSet(' + value + ') event for ' + this.name);
+
     if (!this.online) {
-      this.log.error(this.accessory.context.device.label + ' is offline');
+      this.log.error(this.name + ' is offline');
       throw new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
 
     this.axInstance.post(this.commandURL, JSON.stringify([{
       capability: 'switch',
       command: value ? 'on' : 'off',
-    }])).then(res => {
-      if (res.status === 200) {
-        this.log.debug('Sent on command succcessful');
-        this.log.debug(res.data);
-      } else {
-        this.log.error('Failed to send on command');
-      }
+    }])).then(() => {
+      this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
+    }).catch(reason => {
+      this.log.error('onSet(' + value + ') FAILED for ' + this.name + ': reason ' + reason);
+      throw(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
     });
-
-    this.log.debug('Set Characteristic On ->', value);
   }
 
   /**
@@ -84,25 +82,30 @@ export class SwitchPlatformAccessory extends BasePlatformAccessory {
   async getOn(): Promise<CharacteristicValue> {
     // if you need to return an error to show the device as "Not Responding" in the Home app:
     // throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+    this.log.debug('Received onGet() event for ' + this.name);
+
     let onStatus = 0;
     return new Promise<CharacteristicValue>((resolve, reject) => {
 
       if (!this.online) {
-        this.log.error(this.accessory.context.device.label + ' is offline');
+        this.log.error(this.name + ' is offline');
         return reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       }
 
       this.axInstance.get(this.statusURL).then(res => {
 
         if (res.data.components.main.switch.switch.value !== undefined) {
+          this.log.debug('onGet() SUCCESSFUL for ' + this.name + '. value = ' + res.data.components.main.switch.switch.value);
           onStatus = (res.data.components.main.switch.switch.value === 'on' ? 1 : 0);
           resolve(onStatus);
 
         } else {
+          this.log.error('onGet() FAILED for ' + this.name + '. Undefined value');
           reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         }
 
       }).catch(() => {
+        this.log.error('onGet() FAILED for ' + this.name + '. Comm error.');
         reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       });
     });

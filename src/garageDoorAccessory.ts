@@ -1,6 +1,9 @@
+
 import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
 import { BasePlatformAccessory } from './basePlatformAccessory';
 import { IKHomeBridgeHomebridgePlatform } from './platform';
+
+enum doorActivity {CLOSING = 0, OPENING = 1}
 
 /**
  * Platform Accessory
@@ -9,6 +12,9 @@ import { IKHomeBridgeHomebridgePlatform } from './platform';
  */
 export class GarageDoorPlatformAccessory extends BasePlatformAccessory {
   private service: Service;
+  private intervalId;
+  private getStatusTryCount = 0;
+  private  MAX_POLLING_COUNT = 30;  // 30 seconds
   // private platform: IKHomeBridgeHomebridgePlatform;
 
   // private log: Logger;
@@ -58,26 +64,64 @@ export class GarageDoorPlatformAccessory extends BasePlatformAccessory {
    * Handle "SET" requests from HomeKit
    * These are sent when the user changes the state of an accessory, for example, turning on a Light bulb.
    */
-  async setDoorState(value: CharacteristicValue) {
+  async setDoorState(value: CharacteristicValue): Promise<void> {
 
-    if (!this.online) {
-      this.log.error(this.accessory.context.device.label + ' is offline');
-      throw new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    }
+    this.log.debug('Received setDoorState(' + value + ') event for ' + this.name);
 
-    this.axInstance.post(this.commandURL, JSON.stringify([{
-      capability: 'doorControl',
-      command: value ? 'close' : 'open',
-    }])).then(res => {
-      if (res.status === 200) {
-        this.log.debug('Sent command to ' + this.accessory.context.device.label + ' succcessful');
-        this.log.debug(res.data);
+    return new Promise<void>((resolve, reject) => {
+      if (!this.online) {
+        this.log.error(this.accessory.context.device.label + ' is offline');
+        reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       } else {
-        this.log.error('Failed to send on command');
+        this.axInstance.post(this.commandURL, JSON.stringify([{
+          capability: 'doorControl',
+          command: value ? 'close' : 'open',
+        }])).then(() => {
+          this.log.debug('onDoorState(' + value + ') SUCCESSFUL for ' + this.name);
+          this.getStatusTryCount = 0;
+          this.intervalId = setInterval(this.poleDoorStatus, 1000, this, value);
+          resolve();
+        }).catch(reason => {
+          this.log.error('setDoorState(' + value + ') FAILED for ' + this.name + ': reason ' + reason);
+          reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+        });
       }
     });
+  }
 
-    this.log.debug('Set Characteristic On ->', value);
+  poleDoorStatus(t, doorCommand): void {
+
+    // Determine the target state
+    const targetState = doorCommand ? t.platform.Characteristic.CurrentDoorState.CLOSED :
+      t.platform.Characteristic.CurrentDoorState.OPEN;
+
+    // Check to see if we are there yet
+    t.axInstance.get(t.statusURL).then(res => {
+      const value = res.data.components.main.doorControl.door.value;
+      t.log.debug('Polling ' + t.name + ': ' + value);
+
+      // Closed
+      if ((value === 'closed') && (targetState === t.platform.Characteristic.CurrentDoorState.CLOSED)) {
+        t.service.updateCharacteristic(t.platform.Characteristic.CurrentDoorState,
+          t.platform.Characteristic.CurrentDoorState.CLOSED);
+        clearInterval(t.intervalId);
+
+      // Open
+      } else if ((value === 'open') && (targetState === t.platform.Characteristic.CurrentDoorState.OPEN)) {
+        t.service.updateCharacteristic(t.platform.Characteristic.CurrentDoorState,
+          t.platform.Characteristic.CurrentDoorState.OPEN);
+        clearInterval(t.intervalId);
+      }
+    }).catch(reason => {
+      t.log.error('Failed to get door status while poling: ' + reason);
+      clearInterval(t.intervalId);
+    });
+
+    // Increment the count of tries.  If exceeded, then quit.
+    if (++ t.getStatusTryCount > t.MAX_POLLING_COUNT) {
+      t.log.error('Polling door status for ' + t.name + ' max count exceeded');
+      clearInterval(t.intervalId);
+    }
   }
 
   /**
@@ -107,17 +151,19 @@ export class GarageDoorPlatformAccessory extends BasePlatformAccessory {
 
       this.axInstance.get(this.statusURL).then(res => {
 
-        if (res.data.components.main.doorControl.door.value !== undefined) {
-          switch (res.data.components.main.doorControl.door.value) {
-            case 'closed' : {
+        const value = res.data.components.main.doorControl.door.value;
+        if (value !== undefined) {
+          this.log.debug('getDoorState() SUCCESSFUL for ' + this.name + '. value = ' + value);
+          switch (value) {
+            case 'closed': {
               resolve(states.CLOSED);
               break;
             }
-            case 'closing' : {
+            case 'closing': {
               resolve(states.CLOSING);
               break;
             }
-            case 'open' : {
+            case 'open': {
               resolve(states.OPEN);
               break;
             }
@@ -130,10 +176,12 @@ export class GarageDoorPlatformAccessory extends BasePlatformAccessory {
             }
           }
         } else {
+          this.log.error('Got unexpected DOOR STATE: ' + value);
           reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         }
 
-      }).catch(() => {
+      }).catch((reason) => {
+        this.log.error('getDoorState() FAILED for ' + this.name + '. Comm error ' + reason);
         reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       });
     });

@@ -17,6 +17,7 @@ export abstract class BasePlatformAccessory {
 
   protected accessory: PlatformAccessory;
   protected platform: IKHomeBridgeHomebridgePlatform;
+  protected name: string;
   protected characteristic: typeof Characteristic;
   protected log: Logger;
   protected baseURL: string;
@@ -34,6 +35,7 @@ export abstract class BasePlatformAccessory {
   ) {
     this.accessory = accessory;
     this.platform = platform;
+    this.name = accessory.context.device.label;
     this.log = platform.log;
     this.baseURL = platform.config.BaseURL;
     this.key = platform.config.Key;

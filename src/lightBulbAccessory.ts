@@ -9,7 +9,6 @@ import { IKHomeBridgeHomebridgePlatform } from './platform';
  */
 export class LightbulbPlatformAccessory extends BasePlatformAccessory {
   private service: Service;
-  private commandInProgress = false;
 
   // private log: Logger;
 
@@ -55,24 +54,21 @@ export class LightbulbPlatformAccessory extends BasePlatformAccessory {
    */
   async setOn(value: CharacteristicValue): Promise<void> {
 
-    this.log.debug('setOn called: ' + value);
+    this.log.debug('Received onSet(' + value + ') event for ' + this.name);
 
     return new Promise<void>((resolve, reject) => {
       if (!this.online) {
-        this.log.debug(this.accessory.context.device.label + ' is offline');
+        this.log.debug(this.name + ' is offline');
         return reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       }
       this.axInstance.post(this.commandURL, JSON.stringify([{
         capability: 'switch',
         command: value ? 'on' : 'off',
-      }])).then(res => {
-        this.commandInProgress = false;
-        this.log.debug('Sent on command succcessful');
-        this.log.debug(res.data);
+      }])).then(() => {
+        this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
         resolve();
       }).catch(() => {
-        this.commandInProgress = false;
-        this.log.error('On command failed');
+        this.log.error('onSet FAILED for ' + this.name + '. Comm error');
         reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       });
     });
@@ -96,34 +92,37 @@ export class LightbulbPlatformAccessory extends BasePlatformAccessory {
     // if you need to return an error to show the device as "Not Responding" in the Home app:
     // throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     let onStatus = 0;
-    this.log.debug('getOn called');
+    this.log.debug('Received onGet() event for ' + this.name);
+
     return new Promise<CharacteristicValue>((resolve, reject) => {
       if (!this.online) {
-        this.log.debug(this.accessory.context.device.label + 'is offline');
+        this.log.error(this.accessory.context.device.label + ' is offline');
         return reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       }
       this.axInstance.get(this.statusURL).then(res => {
 
         if (res.data.components.main.switch.switch.value !== undefined) {
+          this.log.debug('onGet() SUCCESSFUL for ' + this.name + '. value = ' + res.data.components.main.switch.switch.value);
           onStatus = (res.data.components.main.switch.switch.value === 'on' ? 1 : 0);
           resolve(onStatus);
-
         } else {
+          this.log.debug('onGet() FAILED for ' + this.name + '. Undefined value');
           reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         }
 
       }).catch(() => {
+        this.log.debug('onGet() FAILED for ' + this.name + '. Comm error');
         reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       });
     });
   }
 
   async setLevel(value: CharacteristicValue): Promise<void> {
-    this.log.debug('setLevel called: ' + value);
+    this.log.debug('Received setLevel(' + value + ') event for ' + this.name);
 
     return new Promise<void>((resolve, reject) => {
       if (!this.online) {
-        this.log.debug(this.accessory.context.device.label + 'is offline');
+        this.log.error(this.accessory.context.device.label + ' is offline');
         return reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       }
 
@@ -136,8 +135,7 @@ export class LightbulbPlatformAccessory extends BasePlatformAccessory {
           ],
       }]);
       this.axInstance.post(this.commandURL, commandBody).then(res => {
-        this.log.debug('Sent on command succcessful');
-        this.log.debug(res.data);
+        this.log.debug('setLevel(' + value + ') SUCCESSFUL for ' + this.name);
         resolve();
       }).catch((error) => {
         this.log.error('Failed to send setLevel command: ' + error);
@@ -147,11 +145,11 @@ export class LightbulbPlatformAccessory extends BasePlatformAccessory {
   }
 
   async getLevel(): Promise<CharacteristicValue> {
-    this.log.debug('getLevel called');
+    this.log.debug('Received getLevel() event for ' + this.name);
     let level = 0;
     return new Promise<CharacteristicValue>((resolve, reject) => {
       if (!this.online) {
-        this.log.debug(this.accessory.context.device.label + 'is offline');
+        this.log.error(this.accessory.context.device.label + 'is offline');
         return reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       }
 
@@ -159,14 +157,16 @@ export class LightbulbPlatformAccessory extends BasePlatformAccessory {
 
         if (res.data.components.main.switch.switch.value !== undefined) {
           level = res.data.components.main.switchLevel.level.value;
-          this.log.debug('Received level from ' + this.accessory.context.device.label + ': ' + level);
+          this.log.debug('getLevel() SUCCESSFUL for ' + this.name + '. value = ' + level);
           resolve(level);
 
         } else {
+          this.log.error('getLevel() FAILED for ' + this.name + '. Undefined value');
           reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         }
 
       }).catch(() => {
+        this.log.error('getLevel() FAILED for ' + this.name + '. Comm error.');
         reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       });
     });

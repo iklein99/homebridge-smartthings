@@ -38,9 +38,14 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
     // Dynamic Platform plugins should only register new accessories after this event was fired,
     // in order to ensure they weren't added to homebridge already. This event can also be used
     // to start discovery of new accessories.
+
     this.api.on('didFinishLaunching', () => {
       log.debug('Executed didFinishLaunching callback');
       // run the method to discover / register your devices as accessories
+
+      // REMOVE ME
+     // this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, this.accessories);
+
       this.getOnlineDevices().then((devices) => {
         this.discoverDevices(devices);
         this.unregisterDevices(devices);
@@ -60,6 +65,8 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
   }
 
   getOnlineDevices(): Promise<Array<object>> {
+    this.log.debug('Discovering devices...');
+
     const command = 'devices';
     const headerDict = {
       'Authorization': 'Bearer: ' + this.config.Key,
@@ -98,6 +105,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
       if (!devices.find(device => {
         return device.deviceId === accessory.UUID;
       })) {
+        this.log.info('Will unregister ' + accessory.context.device.label);
         accessoriesToRemove.push(accessory);
       }
     });
@@ -120,7 +128,6 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
     // this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, this.accessories);
 
     devices.forEach((device) => {
-      // this.log.debug('Found device: ' + device.name);
 
       if (device.components[0].categories.find(cat => this.categories.find(a => a === cat.name))) {
         const existingAccessory = this.accessories.find(accessory => accessory.UUID === device.deviceId);
@@ -143,6 +150,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
           // this.log.info('Removing existing accessory from cache:', existingAccessory.displayName);
         } else {
           // the accessory does not yet exist, so we need to create it
+          this.log.info('Registering new accessory: ' + device.label);
 
           // create a new accessory
           const accessory = new this.api.platformAccessory(device.label, device.deviceId);
