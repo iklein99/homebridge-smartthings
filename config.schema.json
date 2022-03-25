@@ -25,10 +25,12 @@
       },
       {"garageDoorMaxPoll": {
         "title": "GarageDoorMaxPoll",
-        "type": "int",
+        "type": "integer",
         "required": true,
         "default": 40}
       }
     ]
-  }
+  },
+  "form": null,
+  "display": null
 }
