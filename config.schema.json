@@ -4,32 +4,28 @@
   "singular": true,
   "schema": {
     "type": "object",
-    "properties": [
-      {"name": {
+    "properties": {
+      "name": {
         "title": "Name",
         "type": "string",
         "required": true,
-        "default": "Example Dynamic Platform"}
-      },
-      {"baseURL": {
-        "title": "BaseURL",
-        "type": "string",
-        "required": false,
-        "default": "https://api.smartthings.com/v1/"}
-      },
-      {"accessToken": {
-        "title": "AccessToken",
+        "default": "Smartthings Plug (IK)"},
+      "BaseURL": {
+        "title": "Base URL",
         "type": "string",
         "required": true,
-        "default": ""}
-      },
-      {"garageDoorMaxPoll": {
-        "title": "GarageDoorMaxPoll",
+        "default": "https://api.smartthings.com/v1/"},
+      "AccessToken": {
+        "title": "Access Token",
+        "type": "string",
+        "required": true,
+        "default": ""},
+      "GarageDoorMaxPoll": {
+        "title": "Garage Door Max Poll",
         "type": "integer",
         "required": true,
         "default": 40}
       }
-    ]
   },
   "form": null,
   "display": null
