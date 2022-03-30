@@ -12,9 +12,13 @@ This is yet another smartthings plugin for Homebridge.  This requires no access 
 require a lot of work to install.  It will discover devices automatically as well as unregister devices that are removed
 from your smarttthings network.  This is currently under development.
 
+## Fixed in version 1.0.2
+
+Config UI now works.  
+
 ## Device types supported
 
-Currently, the following have been implemented, because that is what I have access to in my home.  Support Switch, Lightbulb, Fan,
+Currently, the following have been implemented, because that is what I have access to in my home.  Supports: Switch, Lightbulb, Fan,
 Garage Door Opener.
 
 ## How to configure
@@ -22,7 +26,7 @@ Garage Door Opener.
 You will need to create a Smartthings personal access token.  You can do that here: https://account.smartthings.com/tokens.  Create a
 new token and make sure it has all of the device permissions.  Save your token and add it to the configuration.
 <br>
-This section should be added to the platforms array:
+This section should be added to the platforms array in your config.json file, but you can now edit using the config UI:
 <pre>
         {
             "Name": "Smartthings Plugin",
