@@ -25,7 +25,7 @@
         "type": "integer",
         "required": true,
         "default": 40},
-      "IngoreLocations": {
+      "IgnoreLocations": {
         "title": "Locations to Ignore",
         "type": "array",
         "items": {

@@ -89,7 +89,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
 
   getLocationsToIgnore(): Promise<boolean> {
     this.log.info('Loading locations for exclusion');
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       this.axInstance.get('locations').then(res => {
         res.data.items.forEach(location => {
           if (this.config.IgnoreLocations.find(l => l.toLowerCase() === location.name.toLowerCase())) {
@@ -99,8 +99,8 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
         this.log.info(`Found ${this.locationIDsToIgnore.length} locations to ignore`);
         resolve(true);
       }).catch(reason => {
-        this.log.error('Could not load locations: ' + reason);
-        reject(reason);
+        this.log.error('Could not load locations: ' + reason + '. You must have r:locations permissions set on the token');
+        resolve(true);
       });
     });
   }
