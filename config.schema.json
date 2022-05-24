@@ -24,8 +24,16 @@
         "title": "Garage Door Max Poll",
         "type": "integer",
         "required": true,
-        "default": 40}
+        "default": 40},
+      "IngoreLocations": {
+        "title": "Locations to Ignore",
+        "type": "array",
+        "items": {
+          "title": "Location Name",
+          "type": "string"
+        }
       }
+    }
   },
   "form": null,
   "display": null

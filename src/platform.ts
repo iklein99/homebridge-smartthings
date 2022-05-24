@@ -7,6 +7,7 @@ import axios = require('axios');
 import { BasePlatformAccessory } from './basePlatformAccessory';
 import { FanPlatformAccessory } from './fanAccessory';
 import { GarageDoorPlatformAccessory } from './garageDoorAccessory';
+import { createHistogram } from 'perf_hooks';
 
 /**
  * HomebridgePlatform
@@ -26,6 +27,18 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
   private fanCat = 'Fan';
   private garageDoorCat = 'GarageDoor';
   private categories = [this.switchCat, this.lightCat, this.plugCat, this.fanCat, this.garageDoorCat];
+  private locationIDsToIgnore: string[] = [];
+  private roomsIDsToIgnore: string[] = [];
+
+  private headerDict = {
+    'Authorization': 'Bearer: ' + this.config.AccessToken,
+  };
+
+  private axInstance = axios.default.create({
+    baseURL: this.config.BaseURL,
+    headers: this.headerDict,
+  });
+
 
   constructor(
     public readonly log: Logger,
@@ -39,7 +52,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
     // in order to ensure they weren't added to homebridge already. This event can also be used
     // to start discovery of new accessories.
 
-    this.api.on('didFinishLaunching', () => {
+    this.api.on('didFinishLaunching', async () => {
       log.debug('Executed didFinishLaunching callback');
       // run the method to discover / register your devices as accessories
 
@@ -49,6 +62,13 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
       // while ((acc = this.accessories.pop()) !== undefined) {
       //   this.log.debug('Cleared ' + acc.displayName);
       // }
+
+      // If locations or rooms to ignore are configured, then
+      // load request those from Smartthings to build the id lists.
+
+      if (this.config.IgnoreLocations) {
+        await this.getLocationsToIgnore();
+      }
 
       this.getOnlineDevices().then((devices) => {
         this.discoverDevices(devices);
@@ -68,26 +88,41 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
     this.accessories.push(accessory);
   }
 
+  getLocationsToIgnore(): Promise<boolean> {
+    this.log.info('Loading locations for exclusion');
+    return new Promise((resolve, reject) => {
+      this.axInstance.get('locations').then(res => {
+        res.data.items.forEach(location => {
+          if (this.config.IgnoreLocations.find(l => l.toLowerCase() === location.name.toLowerCase())) {
+            this.locationIDsToIgnore.push(location.locationId);
+          }
+        });
+        this.log.info(`Found ${this.locationIDsToIgnore.length} locations to ignore`);
+        resolve(true);
+      }).catch(reason => {
+        this.log.error('Could not load locations: ' + reason);
+        reject(reason);
+      });
+    });
+  }
+
   getOnlineDevices(): Promise<Array<object>> {
     this.log.debug('Discovering devices...');
 
     const command = 'devices';
-    const headerDict = {
-      'Authorization': 'Bearer: ' + this.config.AccessToken,
-    };
     const devices: Array<object> = [];
-
-    const axInstance = axios.default.create({
-      baseURL: this.config.BaseURL,
-      headers: headerDict,
-    });
 
     return new Promise<Array<object>>((resolve, reject) => {
 
-      axInstance.get(command).then((res) => {
+      this.axInstance.get(command).then((res) => {
         res.data.items.forEach((device) => {
-          this.log.debug('Pushing ' + device.label);
-          devices.push(device);
+          if (!this.locationIDsToIgnore.find(locationID => device.locationId === locationID)) {
+            this.log.debug('Pushing ' + device.label);
+            devices.push(device);
+          }
+          else {
+            this.log.info(`Ignoring ${device.label} becasue it is in a location to ignore (${device.locationId})`);
+          }
         });
         this.log.debug('Stored all devices.');
         resolve(devices);
@@ -190,7 +225,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
       }
       case this.fanCat: {
         return new FanPlatformAccessory(this, accessory);
-      }case this.garageDoorCat: {
+      } case this.garageDoorCat: {
         return new GarageDoorPlatformAccessory(this, accessory);
       }
       default: {
