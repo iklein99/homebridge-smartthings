@@ -7,7 +7,6 @@ import axios = require('axios');
 import { BasePlatformAccessory } from './basePlatformAccessory';
 import { FanPlatformAccessory } from './fanAccessory';
 import { GarageDoorPlatformAccessory } from './garageDoorAccessory';
-import { createHistogram } from 'perf_hooks';
 
 /**
  * HomebridgePlatform
@@ -119,8 +118,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
           if (!this.locationIDsToIgnore.find(locationID => device.locationId === locationID)) {
             this.log.debug('Pushing ' + device.label);
             devices.push(device);
-          }
-          else {
+          } else {
             this.log.info(`Ignoring ${device.label} becasue it is in a location to ignore (${device.locationId})`);
           }
         });
