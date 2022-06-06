@@ -166,6 +166,8 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
 
     devices.forEach((device) => {
 
+      this.log.debug('DEVICE DATA: ' + JSON.stringify(device));
+
       if (device.components[0].categories.find(cat => this.categories.find(a => a === cat.name))) {
         const existingAccessory = this.accessories.find(accessory => accessory.UUID === device.deviceId);
 

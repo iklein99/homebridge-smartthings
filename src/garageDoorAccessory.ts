@@ -152,7 +152,13 @@ export class GarageDoorPlatformAccessory extends BasePlatformAccessory {
 
         const value = res.data.components.main.doorControl.door.value;
         if (value !== undefined) {
+//          value = null;
           this.log.debug('getDoorState() SUCCESSFUL for ' + this.name + '. value = ' + value);
+
+          // if (value === null) {
+          //   return reject('Invalid door state (null)');
+          // }
+
           switch (value) {
             case 'closed': {
               resolve(states.CLOSED);
