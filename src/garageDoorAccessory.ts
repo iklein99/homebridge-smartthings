@@ -177,7 +177,8 @@ export class GarageDoorPlatformAccessory extends BasePlatformAccessory {
               break;
             }
             default: {
-              reject('Unknown door state returned');
+              this.log.debug(`Invalid door state ${value}.`);
+              throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
             }
           }
         } else {
