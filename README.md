@@ -12,6 +12,10 @@ This is yet another smartthings plugin for Homebridge.  This requires no access 
 require a lot of work to install.  It will discover devices automatically as well as unregister devices that are removed
 from your smarttthings network.  This is currently under development.
 
+## Fixed in version 1.1.3
+
+When getting an unexpected state from a garage door, throw a communications exception.
+
 ## New in version 1.1.1
 
 Added the ability to specify locations to ignore.  The locations are the names you set in the Smartthings App.  See "How to configure" below to learn how to specify locations to ignore.
