@@ -1,4 +1,4 @@
-import { Service, PlatformAccessory, CharacteristicValue, Characteristic } from 'homebridge';
+import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
 import { BasePlatformAccessory } from './basePlatformAccessory';
 import { IKHomeBridgeHomebridgePlatform } from './platform';
 
@@ -82,8 +82,7 @@ export class LockPlatformAccessory extends BasePlatformAccessory {
       if (value === targetValue) {
         this.service.updateCharacteristic(t.platform.Characteristic.LockCurrentState, value);
         clearInterval(this.timer);
-      }
-      else {
+      } else {
         if (++this.pollTry > 120) {
           clearInterval(this.timer);
         }
