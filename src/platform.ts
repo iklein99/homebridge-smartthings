@@ -7,6 +7,7 @@ import axios = require('axios');
 import { BasePlatformAccessory } from './basePlatformAccessory';
 import { FanPlatformAccessory } from './fanAccessory';
 import { GarageDoorPlatformAccessory } from './garageDoorAccessory';
+import { LockPlatformAccessory } from './lockAccessory';
 
 /**
  * HomebridgePlatform
@@ -25,7 +26,8 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
   private plugCat = 'SmartPlug';
   private fanCat = 'Fan';
   private garageDoorCat = 'GarageDoor';
-  private categories = [this.switchCat, this.lightCat, this.plugCat, this.fanCat, this.garageDoorCat];
+  private lockCat = 'SmartLock';
+  private categories = [this.switchCat, this.lightCat, this.plugCat, this.fanCat, this.garageDoorCat, this.lockCat];
   private locationIDsToIgnore: string[] = [];
   private roomsIDsToIgnore: string[] = [];
 
@@ -225,8 +227,12 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
       }
       case this.fanCat: {
         return new FanPlatformAccessory(this, accessory);
-      } case this.garageDoorCat: {
+      }
+      case this.garageDoorCat: {
         return new GarageDoorPlatformAccessory(this, accessory);
+      }
+      case this.lockCat: {
+        return new LockPlatformAccessory(this, accessory);
       }
       default: {
         throw new TypeError();
