@@ -12,7 +12,7 @@ This is yet another smartthings plugin for Homebridge.  This requires no access 
 require a lot of work to install.  It will discover devices automatically as well as unregister devices that are removed
 from your smarttthings network.  This is currently under development.
 
-## New in verson 1.1.4
+## New in verson 1.1.5
 
 Added support for locks.
 
