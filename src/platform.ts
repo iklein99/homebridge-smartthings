@@ -8,6 +8,7 @@ import { BasePlatformAccessory } from './basePlatformAccessory';
 import { FanPlatformAccessory } from './fanAccessory';
 import { GarageDoorPlatformAccessory } from './garageDoorAccessory';
 import { LockPlatformAccessory } from './lockAccessory';
+import { WindowShadeLevelPlatformAccessory } from './windowShadeLevelAccessory';
 
 /**
  * HomebridgePlatform
@@ -27,7 +28,17 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
   private fanCat = 'Fan';
   private garageDoorCat = 'GarageDoor';
   private lockCat = 'SmartLock';
-  private categories = [this.switchCat, this.lightCat, this.plugCat, this.fanCat, this.garageDoorCat, this.lockCat];
+  private windowShadeLevelCat = 'Blind';
+  private categories = [
+    this.switchCat,
+    this.lightCat,
+    this.plugCat,
+    this.fanCat,
+    this.garageDoorCat,
+    this.lockCat,
+    this.windowShadeLevelCat,
+  ];
+
   private locationIDsToIgnore: string[] = [];
   private roomsIDsToIgnore: string[] = [];
 
@@ -214,6 +225,12 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
 
   createAccessoryObject(device, accessory): BasePlatformAccessory {
     const category = this.categories.find(c => device.components[0].categories.find(cat => cat.name === c));
+
+    // For a window shade, not sure if the category is reliable, but we look for the capability.
+
+    if (device.components[0].capabilities.find(c => c.id === 'windowShadeLevel')) {
+      return new WindowShadeLevelPlatformAccessory(this, accessory);
+    }
 
     switch (category) {
       case this.switchCat: {
