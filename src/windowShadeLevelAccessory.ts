@@ -129,7 +129,7 @@ export class WindowShadeLevelPlatformAccessory extends BasePlatformAccessory {
       this.axInstance.get(this.statusURL).then(res => {
 
         if (res.data.components.main.windowShadeLevel.shadeLevel.value !== undefined) {
-          this.log.debug('onGet() SUCCESSFUL for ' + this.name + '. value = ' + res.data.components.main.lock.lock.value);
+          this.log.debug('onGet() SUCCESSFUL for ' + this.name + '. value = ' + res.data.components.main.windowShadeLevel.shadeLevel.value);
           const position = res.data.components.main.windowShadeLevel.shadeLevel.value;
           resolve(position);
         } else {
