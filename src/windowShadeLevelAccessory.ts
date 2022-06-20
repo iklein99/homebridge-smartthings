@@ -69,19 +69,19 @@ export class WindowShadeLevelPlatformAccessory extends BasePlatformAccessory {
       capability: 'windowShadeLevel',
       command: 'setShadeLevel',
       arguments: [
-        {
-          shadeLevel: value,
-        },
+        value,
       ],
-    }])).then(() => {
-      this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
-      this.pollTry = 0;
-      this.log.debug('Polling lock status...');
-      this.timer = setInterval(this.pollShadeLevel = this.pollShadeLevel.bind(this), 1000, this, value);
-    }).catch(reason => {
-      this.log.error('onSet(' + value + ') FAILED for ' + this.name + ': reason ' + reason);
-      throw(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
-    });
+    }]))
+      // .then(() => {
+      //   this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
+      //   this.pollTry = 0;
+      //   this.log.debug('Polling lock status...');
+      //   this.timer = setInterval(this.pollShadeLevel = this.pollShadeLevel.bind(this), 1000, this, value);
+      // })
+      .catch(reason => {
+        this.log.error('onSet(' + value + ') FAILED for ' + this.name + ': reason ' + reason);
+        throw(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+      });
   }
 
   private async pollShadeLevel(t: WindowShadeLevelPlatformAccessory, targetValue: CharacteristicValue) {
