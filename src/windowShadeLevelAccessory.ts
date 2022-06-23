@@ -12,6 +12,7 @@ export class WindowShadeLevelPlatformAccessory extends BasePlatformAccessory {
   private targetPosition = 0;
   private timer;
   private pollTry = 0;
+  private lastPolledShadeLevel = 0;
 
   // private log: Logger;
 
@@ -72,24 +73,25 @@ export class WindowShadeLevelPlatformAccessory extends BasePlatformAccessory {
         value,
       ],
     }]))
-      // .then(() => {
-      //   this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
-      //   this.pollTry = 0;
-      //   this.log.debug('Polling lock status...');
-      //   this.timer = setInterval(this.pollShadeLevel = this.pollShadeLevel.bind(this), 1000, this, value);
-      // })
+      .then(() => {
+        this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
+        this.pollTry = 0;
+        this.log.debug('Polling lock status...');
+        this.timer = setInterval(this.pollShadeLevel = this.pollShadeLevel.bind(this), 1000, this);
+      })
       .catch(reason => {
         this.log.error('onSet(' + value + ') FAILED for ' + this.name + ': reason ' + reason);
         throw(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       });
   }
 
-  private async pollShadeLevel(t: WindowShadeLevelPlatformAccessory, targetValue: CharacteristicValue) {
+  private async pollShadeLevel(t: WindowShadeLevelPlatformAccessory) {
     this.getCurrentPosition().then(value => {
       this.service.updateCharacteristic(t.platform.Characteristic.CurrentPosition, value);
-      if (Math.abs((value as number) - (targetValue as number)) < 5 ) {
+      if (+value === this.lastPolledShadeLevel) {
         clearInterval(this.timer);
       } else {
+        this.lastPolledShadeLevel = +value;
         if (++this.pollTry > 120) {
           clearInterval(this.timer);
         }
