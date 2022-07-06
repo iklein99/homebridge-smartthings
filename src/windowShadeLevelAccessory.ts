@@ -1,5 +1,5 @@
 import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
-import { PositionState } from 'hap-nodejs/dist/lib/definitions'
+import { PositionState } from 'hap-nodejs/dist/lib/definitions';
 import { BasePlatformAccessory } from './basePlatformAccessory';
 import { IKHomeBridgeHomebridgePlatform } from './platform';
 
