@@ -1,4 +1,5 @@
 import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
+import { PositionState } from 'hap-nodejs/dist/lib/definitions'
 import { BasePlatformAccessory } from './basePlatformAccessory';
 import { IKHomeBridgeHomebridgePlatform } from './platform';
 
@@ -13,6 +14,7 @@ export class WindowShadeLevelPlatformAccessory extends BasePlatformAccessory {
   private timer;
   private pollTry = 0;
   private lastPolledShadeLevel = 0;
+  private shadeState = PositionState.STOPPED;
 
   // private log: Logger;
 
@@ -40,7 +42,7 @@ export class WindowShadeLevelPlatformAccessory extends BasePlatformAccessory {
     // see https://developers.homebridge.io/#/service/Lightbulb
 
     // register handlers for the On/Off Characteristic
-    this.service.getCharacteristic(platform.Characteristic.CurrentPosition).onGet(this.getCurrentPosition.bind(this));
+    this.service.getCharacteristic(platform.Characteristic.CurrentPosition).onGet(this.getCurrentPositionCallback.bind(this));
     this.service.getCharacteristic(platform.Characteristic.PositionState).onGet(this.getPositionState.bind(this));
 
     this.service.getCharacteristic(platform.Characteristic.TargetPosition)
@@ -76,7 +78,7 @@ export class WindowShadeLevelPlatformAccessory extends BasePlatformAccessory {
       .then(() => {
         this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
         this.pollTry = 0;
-        this.log.debug('Polling lock status...');
+        this.log.debug('Polling shade status...');
         this.timer = setInterval(this.pollShadeLevel = this.pollShadeLevel.bind(this), 1000, this);
       })
       .catch(reason => {
@@ -86,13 +88,26 @@ export class WindowShadeLevelPlatformAccessory extends BasePlatformAccessory {
   }
 
   private async pollShadeLevel(t: WindowShadeLevelPlatformAccessory) {
+    this.log.debug(`Shade level poll event #${this.pollTry + 1}`);
     this.getCurrentPosition().then(value => {
-      this.service.updateCharacteristic(t.platform.Characteristic.CurrentPosition, value);
-      if (+value === this.lastPolledShadeLevel) {
+      const currentPostion = +value;
+      this.log.debug(`Current shade level is ${currentPostion}`);
+      this.service.updateCharacteristic(t.platform.Characteristic.CurrentPosition, currentPostion);
+      if (currentPostion === this.lastPolledShadeLevel) {
         clearInterval(this.timer);
+        this.shadeState = PositionState.STOPPED;
+        this.log.debug('Shade appears to have stopped.  Will stop polling');
       } else {
-        this.lastPolledShadeLevel = +value;
+        if (currentPostion < this.lastPolledShadeLevel) {
+          this.log.debug('Shade appears to be lowering (decreasing)');
+          this.shadeState = PositionState.DECREASING;
+        } else {
+          this.log.debug('Shade appears to be raising (increasing)');
+          this.shadeState = PositionState.INCREASING;
+        }
+        this.lastPolledShadeLevel = currentPostion;
         if (++this.pollTry > 120) {
+          this.log.debug('Polled for 2 minutes.  Ending');
           clearInterval(this.timer);
         }
       }
@@ -101,6 +116,11 @@ export class WindowShadeLevelPlatformAccessory extends BasePlatformAccessory {
 
   getTargetPosition(): number {
     return this.targetPosition;
+  }
+
+  async getCurrentPositionCallback(): Promise<CharacteristicValue> {
+    this.log.debug('Received getCurrentPosition() event for ' + this.name);
+    return this.getCurrentPosition();
   }
 
   /**
@@ -119,7 +139,6 @@ export class WindowShadeLevelPlatformAccessory extends BasePlatformAccessory {
   async getCurrentPosition(): Promise<CharacteristicValue> {
     // if you need to return an error to show the device as "Not Responding" in the Home app:
     // throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    this.log.debug('Received getCurrentPosition() event for ' + this.name);
 
     return new Promise<CharacteristicValue>((resolve, reject) => {
 
@@ -146,10 +165,15 @@ export class WindowShadeLevelPlatformAccessory extends BasePlatformAccessory {
     });
   }
 
-  async getPositionState(): Promise<CharacteristicValue> {
-    // TODO: Write me.
-    return new Promise(resolve => {
-      resolve(0);
-    });
+  getPositionState(): number {
+    this.log.debug('GetPositionState called, value: ' + this.shadeState);
+    return this.shadeState;
   }
+
+  // async getPositionState(): Promise<CharacteristicValue> {
+  //   // TODO: Write me.
+  //   return new Promise(resolve => {
+  //     resolve(0);
+  //   });
+  // }
 }
