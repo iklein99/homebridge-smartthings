@@ -12,9 +12,6 @@ export class WindowShadeLevelPlatformAccessory extends BasePlatformAccessory {
   private service: Service;
   private targetPosition = 0;
   private timer;
-  private pollTry = 0;
-  private lastPolledShadeLevel = 0;
-  private shadeState = PositionState.STOPPED;
 
   // private log: Logger;
 
@@ -79,25 +76,54 @@ export class WindowShadeLevelPlatformAccessory extends BasePlatformAccessory {
         this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
         this.pollTry = 0;
         this.log.debug('Polling shade status...');
-        this.timer = setInterval(this.pollShadeLevel = this.pollShadeLevel.bind(this), 1000, this);
+
+        // Poll every 2 seconds
+        this.timesAtSameLevel = 0;
+        this.shadeState = PositionState.STOPPED;
+        this.timer = setInterval(this.pollShadeLevel = this.pollShadeLevel.bind(this), 2000, this);
       })
       .catch(reason => {
         this.log.error('onSet(' + value + ') FAILED for ' + this.name + ': reason ' + reason);
-        throw(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+        throw (new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       });
   }
 
+  private pollTry = 0;
+  private lastPolledShadeLevel = 0;
+  private shadeState = PositionState.STOPPED;
+  private timesAtSameLevel = 0;
+  /**
+   *
+   * @param t - the 'this' variable
+   * Polls the device as it is moving into position after a command to change it.
+   */
   private async pollShadeLevel(t: WindowShadeLevelPlatformAccessory) {
     this.log.debug(`Shade level poll event #${this.pollTry + 1}`);
+
     this.getCurrentPosition().then(value => {
+
+      // Update homebridge with the current position
       const currentPostion = +value;
       this.log.debug(`Current shade level is ${currentPostion}`);
+
+      // If we are within 5 pct of target, consider us finished.
+      if (Math.abs(currentPostion - this.targetPosition) <= 5) {
+        this.log.debug(`Shade close to target postion of ${this.targetPosition}.  Close enough!`);
+        this.service.updateCharacteristic(t.platform.Characteristic.CurrentPosition, this.targetPosition);
+        clearInterval(this.timer);
+        this.shadeState = PositionState.STOPPED;
+        return;
+      }
+
+      // Let Homebridge know where we are, then see if we are stuck her, lowering or raising.
       this.service.updateCharacteristic(t.platform.Characteristic.CurrentPosition, currentPostion);
-      if (currentPostion === this.lastPolledShadeLevel) {
+      if ((currentPostion === this.lastPolledShadeLevel) && (++this.timesAtSameLevel > 5)) {
+        // After 10 seconds at same level, we're done.
         clearInterval(this.timer);
         this.shadeState = PositionState.STOPPED;
         this.log.debug('Shade appears to have stopped.  Will stop polling');
       } else {
+        this.timesAtSameLevel = 0;
         if (currentPostion < this.lastPolledShadeLevel) {
           this.log.debug('Shade appears to be lowering (decreasing)');
           this.shadeState = PositionState.DECREASING;
@@ -106,7 +132,9 @@ export class WindowShadeLevelPlatformAccessory extends BasePlatformAccessory {
           this.shadeState = PositionState.INCREASING;
         }
         this.lastPolledShadeLevel = currentPostion;
-        if (++this.pollTry > 120) {
+
+        // Stop polling after 2 minutes
+        if (++this.pollTry > 60) {
           this.log.debug('Polled for 2 minutes.  Ending');
           clearInterval(this.timer);
         }
