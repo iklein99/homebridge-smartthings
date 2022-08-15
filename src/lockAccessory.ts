@@ -43,6 +43,20 @@ export class LockPlatformAccessory extends BasePlatformAccessory {
     this.service.getCharacteristic(platform.Characteristic.LockTargetState)
       .onSet(this.setTargetState.bind(this))
       .onGet(this.getTargetState.bind(this));
+      
+      
+     /**
+     * Updating characteristics values asynchronously.
+     */
+
+    setInterval(() => {
+      this.platform.log.debug('Updating HomeKit for device ' + accessory.context.device.label);
+
+      this.getCurrentState().then((lockState) => {
+        this.service.updateCharacteristic(this.platform.Characteristic.LockCurrentState, lockState);
+      });
+
+    }, 10000);
   }
 
 
