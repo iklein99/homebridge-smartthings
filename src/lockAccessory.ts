@@ -43,20 +43,27 @@ export class LockPlatformAccessory extends BasePlatformAccessory {
     this.service.getCharacteristic(platform.Characteristic.LockTargetState)
       .onSet(this.setTargetState.bind(this))
       .onGet(this.getTargetState.bind(this));
-      
-      
-     /**
+
+    /**
      * Updating characteristics values asynchronously.
      */
 
-    setInterval(() => {
-      this.platform.log.debug('Updating HomeKit for device ' + accessory.context.device.label);
+    let pollLocksSeconds = 10; // default to 10 seconds
+    if (this.platform.config.PollLocksSeconds !== undefined) {
+      pollLocksSeconds = this.platform.config.PollLocksSeconds;
+    }
 
-      this.getCurrentState().then((lockState) => {
-        this.service.updateCharacteristic(this.platform.Characteristic.LockCurrentState, lockState);
-      });
+    if (pollLocksSeconds > 0) {
+      this.log.debug(`Polling lock set to ${pollLocksSeconds}`);
+      setInterval(() => {
+        this.platform.log.debug('Updating HomeKit for device ' + accessory.context.device.label);
 
-    }, 10000);
+        this.getCurrentState().then((lockState) => {
+          this.service.updateCharacteristic(this.platform.Characteristic.LockCurrentState, lockState);
+        });
+
+      }, pollLocksSeconds * 1000);
+    }
   }
 
 
