@@ -60,6 +60,18 @@ export class LockPlatformAccessory extends BasePlatformAccessory {
 
         this.getCurrentState().then((lockState) => {
           this.service.updateCharacteristic(this.platform.Characteristic.LockCurrentState, lockState);
+          switch(lockState) {
+            case this.platform.Characteristic.LockCurrentState.SECURED: {
+              this.service.updateCharacteristic(this.platform.Characteristic.LockTargetState,
+                this.platform.Characteristic.LockTargetState.SECURED);
+              break;
+            }
+            case this.platform.Characteristic.LockCurrentState.UNSECURED: {
+              this.service.updateCharacteristic(this.platform.Characteristic.LockTargetState,
+                this.platform.Characteristic.LockTargetState.UNSECURED);
+              break;
+            }
+          }
         });
 
       }, pollLocksSeconds * 1000);
