@@ -12,6 +12,8 @@ This is yet another smartthings plugin for Homebridge.  This requires no access 
 require a lot of work to install.  It will discover devices automatically as well as unregister devices that are removed
 from your smarttthings network.  This is currently under development.
 
+## New in version 1.1.10
+When polling lock, update target state.
 ## New in version 1.1.9
 Will poll locks to continuously update.  Added a new optional config value "PollLocksSeconds" to control how frequently
 we poll.  Default is 10 seconds.  A value of 0 will result in no polling.
