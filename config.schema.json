@@ -31,6 +31,12 @@
           "required": false,
           "default": 10
         },
+      "PollDoorsSeconds": {
+          "title": "Poll Garage Doors (zero = don't poll)",
+          "type": "integer",
+          "required": false,
+          "default": 10
+        },
       "IgnoreLocations": {
         "title": "Locations to Ignore",
         "type": "array",

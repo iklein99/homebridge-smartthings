@@ -12,6 +12,7 @@ export class GarageDoorPlatformAccessory extends BasePlatformAccessory {
   private service: Service;
   private intervalId;
   private getStatusTryCount = 0;
+  private doorInTransition = false;
   // private  MAX_POLLING_COUNT = 30;  // 30 seconds
   // private platform: IKHomeBridgeHomebridgePlatform;
 
@@ -52,10 +53,37 @@ export class GarageDoorPlatformAccessory extends BasePlatformAccessory {
         return false;
       });
 
-    // register handlers for the On/Off Characteristic
-    // this.service.getCharacteristic(platform.Characteristic.On)
-    //   .onSet(this.setOn.bind(this))                // SET - bind to the `setOn` method below
-    //   .onGet(this.getOn.bind(this));               // GET - bind to the `getOn` method below
+    // Update states asynchronously
+
+    let pollDoorsSeconds = 10;
+    if (this.platform.config.PollDoorsSeconds !== undefined) {
+      pollDoorsSeconds = this.platform.config.PollDoorsSeconds;
+    }
+
+    if (pollDoorsSeconds > 0) {
+      this.log.debug(`Polling lock set to ${pollDoorsSeconds}`);
+      setInterval(() => {
+        if (!this.doorInTransition) {
+          this.platform.log.debug('Updating HomeKit for device ' + accessory.context.device.label);
+
+          this.getDoorState().then((doorState) => {
+            this.service.updateCharacteristic(this.platform.Characteristic.CurrentDoorState, doorState);
+            switch (doorState) {
+              case this.platform.Characteristic.CurrentDoorState.CLOSED: {
+                this.service.updateCharacteristic(this.platform.Characteristic.TargetDoorState,
+                  this.platform.Characteristic.TargetDoorState.CLOSED);
+                break;
+              }
+              case this.platform.Characteristic.CurrentDoorState.OPEN: {
+                this.service.updateCharacteristic(this.platform.Characteristic.TargetDoorState,
+                  this.platform.Characteristic.TargetDoorState.OPEN);
+                break;
+              }
+            }
+          });
+        }
+      }, pollDoorsSeconds * 1000);
+    }
   }
 
 
@@ -72,6 +100,7 @@ export class GarageDoorPlatformAccessory extends BasePlatformAccessory {
         this.log.error(this.accessory.context.device.label + ' is offline');
         reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       } else {
+        this.doorInTransition = true;
         this.axInstance.post(this.commandURL, JSON.stringify([{
           capability: 'doorControl',
           command: value ? 'close' : 'open',
@@ -83,6 +112,7 @@ export class GarageDoorPlatformAccessory extends BasePlatformAccessory {
         }).catch(reason => {
           this.log.error('setDoorState(' + value + ') FAILED for ' + this.name + ': reason ' + reason);
           reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+          this.doorInTransition = false;
         });
       }
     });
@@ -103,22 +133,26 @@ export class GarageDoorPlatformAccessory extends BasePlatformAccessory {
       if ((value === 'closed') && (targetState === t.platform.Characteristic.CurrentDoorState.CLOSED)) {
         t.service.updateCharacteristic(t.platform.Characteristic.CurrentDoorState,
           t.platform.Characteristic.CurrentDoorState.CLOSED);
+        t.doorInTransition = false;
         clearInterval(t.intervalId);
 
-      // Open
+        // Open
       } else if ((value === 'open') && (targetState === t.platform.Characteristic.CurrentDoorState.OPEN)) {
         t.service.updateCharacteristic(t.platform.Characteristic.CurrentDoorState,
           t.platform.Characteristic.CurrentDoorState.OPEN);
+        t.doorInTransition = false;
         clearInterval(t.intervalId);
       }
     }).catch(reason => {
-      t.log.error('Failed to get door status while poling: ' + reason);
+      t.log.error('Failed to get door status while polling: ' + reason);
+      t.doorInTransition = false;
       clearInterval(t.intervalId);
     });
 
     // Increment the count of tries.  If exceeded, then quit.
-    if (++ t.getStatusTryCount > t.platform.config.GarageDoorMaxPoll) {
+    if (++t.getStatusTryCount > t.platform.config.GarageDoorMaxPoll) {
       t.log.error('Polling door status for ' + t.name + ' max count exceeded');
+      t.doorInTransition = false;
       clearInterval(t.intervalId);
     }
   }
