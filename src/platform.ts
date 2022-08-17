@@ -133,7 +133,6 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
             return;
           }
 
-
           if (!this.locationIDsToIgnore.find(locationID => device.locationId === locationID)) {
             this.log.debug('Pushing ' + device.label);
             devices.push(device);

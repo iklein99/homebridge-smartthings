@@ -12,9 +12,12 @@ This is yet another smartthings plugin for Homebridge.  This requires no access 
 require a lot of work to install.  It will discover devices automatically as well as unregister devices that are removed
 from your smarttthings network.  This is currently under development.
 
+## New in version 1.1.12
+Thanks to neegool, can now ignore devices.  To do this, add "IgnoreDevices" to your config file, which is an array of strings.
 ## New in version 1.1.11
 Added continuous polling for garage doors.
 
+## New in version 1.1.10
 When polling lock, update target state.
 
 ## New in version 1.1.9
@@ -59,10 +62,14 @@ This section should be added to the platforms array in your config.json file, bu
             "BaseURL": "https://api.smartthings.com/v1",
             "GarageDoorMaxPoll": 40,
             "platform": "HomeBridgeSmartThings",
-             "IgnoreLocations": [
+            "IgnoreLocations": [
                  "My location 1",
                  "My location 2"
-             ]
+             ],
+            "IgnoreDevices": [
+                "Device to ignore 1",
+                "Device to ignore 2"
+            ]
        }
 </pre>
 The "IgnoreLocations" array may be omitted.  This array can be used to specify location names, as confogured in the Smartthings app.  All of the devices in these locations will be ignored and not added to Homebridge.  If you add any IgnoreLocations after you had previously started Homebridge with this plugin, those devices will be removed.  You may remove this section to have them added back in.  IMPORTANT: your API token must have the "r:locations" permission in order to ignore locations.<br>
