@@ -44,6 +44,14 @@
           "title": "Location Name",
           "type": "string"
         }
+      },
+      "IgnoreDevices": {
+        "title": "Devices to Ignore",
+        "type": "array",
+        "items": {
+          "title": "Device Name",
+          "type": "string"
+        }
       }
     }
   },
