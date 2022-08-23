@@ -75,8 +75,7 @@ export class LockPlatformAccessory extends BasePlatformAccessory {
               }
             }
           });
-        }
-        else {
+        } else {
           this.log.debug(`${this.name} in transition - skipping check`);
         }
       }, pollLocksSeconds * 1000);
