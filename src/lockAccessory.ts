@@ -66,11 +66,13 @@ export class LockPlatformAccessory extends BasePlatformAccessory {
               case this.platform.Characteristic.LockCurrentState.SECURED: {
                 this.service.updateCharacteristic(this.platform.Characteristic.LockTargetState,
                   this.platform.Characteristic.LockTargetState.SECURED);
+                this.targetState = this.platform.Characteristic.LockTargetState.SECURED as number;
                 break;
               }
               case this.platform.Characteristic.LockCurrentState.UNSECURED: {
                 this.service.updateCharacteristic(this.platform.Characteristic.LockTargetState,
                   this.platform.Characteristic.LockTargetState.UNSECURED);
+                this.targetState = this.platform.Characteristic.LockTargetState.UNSECURED as number;
                 break;
               }
             }
