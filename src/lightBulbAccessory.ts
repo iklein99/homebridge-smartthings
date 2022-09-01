@@ -41,9 +41,29 @@ export class LightbulbPlatformAccessory extends BasePlatformAccessory {
       .onGet(this.getOn.bind(this));               // GET - bind to the `getOn` method below
 
     if (accessory.context.device.components[0].capabilities.find(c => c.id === 'switchLevel')) {
+      this.log.debug(`${this.name} supports switchLevel`);
       this.service.getCharacteristic(platform.Characteristic.Brightness)
         .onSet(this.setLevel.bind(this))
         .onGet(this.getLevel.bind(this));
+    }
+
+    // If this bulb supports colorTemperature, then add those handlers
+    if (accessory.context.device.components[0].capabilities.find(c => c.id === 'colorTemperature')) {
+      this.log.debug(`${this.name} supports colorTemperature`);
+      this.service.getCharacteristic(platform.Characteristic.ColorTemperature)
+        .onSet(this.setColorTemp.bind(this))
+        .onGet(this.getColorTemp.bind(this));
+    }
+
+    // If we support color control...
+    if (accessory.context.device.components[0].capabilities.find(c => c.id === 'colorControl')) {
+      this.log.debug(`${this.name} supports colorControl`);
+      this.service.getCharacteristic(platform.Characteristic.Hue)
+        .onSet(this.setHue.bind(this))
+        .onGet(this.getHue.bind(this));
+      this.service.getCharacteristic(platform.Characteristic.Saturation)
+        .onSet(this.setSaturation.bind(this))
+        .onGet(this.getSaturation.bind(this));
     }
   }
 
@@ -167,6 +187,113 @@ export class LightbulbPlatformAccessory extends BasePlatformAccessory {
 
       }).catch(() => {
         this.log.error('getLevel() FAILED for ' + this.name + '. Comm error.');
+        reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+      });
+    });
+  }
+
+  async setColorTemp(value: CharacteristicValue): Promise<void> {
+    this.log.debug(`Set Color Temperature received with value ${value}`);
+
+    return new Promise((resolve, reject) => {
+      if (!this.online) {
+        this.log.error(this.accessory.context.device.label + ' is offline');
+        return reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+      }
+      const stValue = 6500 - Math.round((value as number - 140) / 360 * 6500) + 1;
+      this.log.debug(`Sending converted temperature value of ${stValue} to ${this.name}`);
+      this.sendCommand('colorTemperature', 'setColorTemperature', [stValue])
+        .then(() => resolve())
+        .catch((value) => reject(value));
+    });
+  }
+
+  async getColorTemp(): Promise<CharacteristicValue> {
+    return new Promise((resolve, reject) => {
+      this.axInstance.get(this.statusURL).then(res => {
+
+        let stTemperature;
+
+        if (res.data.components.main.colorTemperature.colorTemperature.value !== undefined) {
+          stTemperature = Math.min(res.data.components.main.colorTemperature.colorTemperature.value, 6500);
+          this.log.debug('getColorTemperature() SUCCESSFUL for ' + this.name + '. value = ' + stTemperature);
+          // Convert number to the homebridge compatible value
+          const hbTemperature = 500 - ((stTemperature / 6500) * 360);
+          resolve(hbTemperature);
+
+        } else {
+          this.log.error('getColorTemperature() FAILED for ' + this.name + '. Undefined value');
+          reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+        }
+
+      }).catch(() => {
+        this.log.error('getColorTemperature() FAILED for ' + this.name + '. Comm error.');
+        reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+      });
+    });
+  }
+
+  async setHue(value: CharacteristicValue): Promise<void> {
+    this.log.debug(`setHue called with value ${value}`);
+    const huePct = Math.round((value as number / 360) * 100);
+    this.log.debug(`Hue arc value of ${value} converted to Hue Percent of ${huePct}`);
+    return new Promise((resolve, reject) => {
+      this.sendCommand('colorControl', 'setHue', [huePct])
+        .then(() => resolve())
+        .catch((value) => reject(value));
+    });
+  }
+
+  async getHue(): Promise < CharacteristicValue > {
+    return new Promise((resolve, reject) => {
+      this.axInstance.get(this.statusURL).then(res => {
+
+        if (res.data.components.main.colorControl.hue.value !== undefined) {
+          const hue = res.data.components.main.colorControl.hue.value;
+          this.log.debug('getHue() SUCCESSFUL for ' + this.name + '. value = ' + hue);
+          const hueArc = Math.round((hue / 100) * 360);
+          this.log.debug(`Hue Percent of ${hue} converted to ${hueArc}.`);
+          resolve(hueArc);
+
+        } else {
+          this.log.error('getHue() FAILED for ' + this.name + '. Undefined value');
+          reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+        }
+
+      }).catch(() => {
+        this.log.error('getHue() FAILED for ' + this.name + '. Comm error.');
+        reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+      });
+    });
+  }
+
+  async setSaturation(value: CharacteristicValue): Promise<void> {
+    this.log.debug(`setSaturation called with value ${value}`);
+    return new Promise((resolve, reject) => {
+      // Convert degress into percent
+      this.sendCommand('colorControl', 'setSaturation', [value])
+        .then(() => resolve())
+        .catch((value) => reject(value));
+    });
+  }
+
+  async getSaturation(): Promise < CharacteristicValue > {
+    return new Promise((resolve, reject) => {
+      this.axInstance.get(this.statusURL).then(res => {
+
+        if (res.data.components.main.colorControl.saturation.value !== undefined) {
+          const satPct = res.data.components.main.colorControl.saturation.value;
+          this.log.debug('getSaturation() SUCCESSFUL for ' + this.name + '. value = ' + satPct);
+          // Convert saturation from percent to degrees
+          resolve(satPct);
+
+        } else {
+          this.log.error('getSaturation() FAILED for ' + this.name + '. Undefined value');
+          reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+        }
+
+      }).catch(() => {
+        this.log.error('getSaturation() FAILED for ' + this.name + '. Comm error.');
         reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       });
     });

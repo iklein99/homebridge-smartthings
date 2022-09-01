@@ -69,4 +69,32 @@ export abstract class BasePlatformAccessory {
       });
   }
 
+  async sendCommand(capability: string, command: string, args?: unknown[]): Promise<void> {
+
+    let cmd: unknown;
+
+    if (args) {
+      cmd = {
+        capability: capability,
+        command: command,
+        arguments: args,
+      };
+    } else {
+      cmd = {
+        capability: capability,
+        command: command,
+      };
+    }
+
+    const commandBody = JSON.stringify([cmd]);
+    return new Promise((resolve, reject) => {
+      this.axInstance.post(this.commandURL, commandBody).then(() => {
+        this.log.debug(`${command} successful for ${this.name}`);
+        resolve();
+      }).catch((error) => {
+        this.log.error(`${command} failed for ${this.name}: ${error}`);
+        reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+      });
+    });
+  }
 }
