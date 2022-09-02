@@ -239,7 +239,11 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
 
     switch (category) {
       case this.switchCat: {
-        return new SwitchPlatformAccessory(this, accessory);
+        if (accessory.context.device.components[0].capabilities.find(c => c.id === 'switchLevel')) {
+          return new LightbulbPlatformAccessory(this, accessory);
+        } else {
+          return new SwitchPlatformAccessory(this, accessory);
+        }
       }
       case this.plugCat: {
         return new SwitchPlatformAccessory(this, accessory);

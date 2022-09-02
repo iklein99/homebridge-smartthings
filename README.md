@@ -12,6 +12,9 @@ This is yet another smartthings plugin for Homebridge.  This requires no access 
 require a lot of work to install.  It will discover devices automatically as well as unregister devices that are removed
 from your smarttthings network.  This is currently under development.
 
+## Fixed in version 1.2.1
+If a Smartthings switch is found, and it supports the 'switchLevel' capability, then treat it as a lightbulb.
+
 ## New in version 1.2.0
 Added control of lights that support color control and/or color temperature.
 
