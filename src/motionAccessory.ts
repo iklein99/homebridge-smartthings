@@ -68,9 +68,9 @@ export class MotionPlatformAccessory extends BasePlatformAccessory {
 
       this.axInstance.get(this.statusURL).then(res => {
 
-        if (res.data.components.main.switch.switch.value !== undefined) {
-          this.log.debug('onGet() SUCCESSFUL for ' + this.name + '. value = ' + res.data.components.main.switch.switch.value);
-          onStatus = (res.data.components.main.switch.switch.value === 'on' ? 1 : 0);
+        if (res.data.components.main.motion.motion.value !== undefined) {
+          this.log.debug('onGet() SUCCESSFUL for ' + this.name + '. value = ' + res.data.components.main.motion.motion.value);
+          onStatus = (res.data.components.main.motion.motion.value === 'on' ? 1 : 0);
           resolve(onStatus);
 
         } else {
