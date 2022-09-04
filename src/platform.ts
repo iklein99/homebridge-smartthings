@@ -9,6 +9,7 @@ import { FanPlatformAccessory } from './fanAccessory';
 import { GarageDoorPlatformAccessory } from './garageDoorAccessory';
 import { LockPlatformAccessory } from './lockAccessory';
 import { WindowShadeLevelPlatformAccessory } from './windowShadeLevelAccessory';
+import { ContactPlatformAccessory } from './contactAccessory';
 
 /**
  * HomebridgePlatform
@@ -29,6 +30,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
   private garageDoorCat = 'GarageDoor';
   private lockCat = 'SmartLock';
   private windowShadeLevelCat = 'Blind';
+  private contactCat = 'Contact';
   private categories = [
     this.switchCat,
     this.lightCat,
@@ -37,6 +39,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
     this.garageDoorCat,
     this.lockCat,
     this.windowShadeLevelCat,
+    this.contactCat
   ];
 
   private locationIDsToIgnore: string[] = [];
@@ -259,6 +262,9 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
       }
       case this.lockCat: {
         return new LockPlatformAccessory(this, accessory);
+      }
+      case this.contactCat: {
+        return new ContactPlatformAccessory(this, accessory);
       }
       default: {
         throw new TypeError();
