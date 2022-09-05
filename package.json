@@ -1,16 +1,16 @@
 {
   "private": false,
   "displayName": "SmartThings Plugin",
-  "name": "homebridge-smartthings-ik",
-  "version": "1.2.0",
+  "name": "homebridge-smartthings-rh",
+  "version": "1.2.1",
   "description": "Connects SmartThings devices to Homebridge.  Automatically discovers devices.",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/iklein99/homebridge-smartthings.git"
+    "url": "https://github.com/chevellebro1/homebridge-smartthings.git"
   },
   "bugs": {
-    "url": "https://github.com/iklein99/homebridge-smartthings/issues"
+    "url": "https://github.com/chevellebro1/homebridge-smartthings/issues"
   },
   "engines": {
     "node": ">=14.18.1",
