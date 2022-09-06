@@ -39,7 +39,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
     this.garageDoorCat,
     this.lockCat,
     this.windowShadeLevelCat,
-    this.motionCat
+    this.motionCat,
   ];
 
   private locationIDsToIgnore: string[] = [];
