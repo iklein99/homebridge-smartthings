@@ -37,7 +37,7 @@ export class MotionPlatformAccessory extends BasePlatformAccessory {
 
     // register handlers for the On/Off Characteristic
     this.service.getCharacteristic(platform.Characteristic.MotionDetected)
-      .onGet(this.getOn.bind(this));               // GET - bind to the `getOn` method below
+      .onGet(this.getMotionDetected.bind(this));               // GET - bind to the `getOn` method below
   }
 
   /**
@@ -53,10 +53,10 @@ export class MotionPlatformAccessory extends BasePlatformAccessory {
    * @example
    * this.service.updateCharacteristic(this.platform.Characteristic.On, true)
    */
-  async getOn(): Promise<CharacteristicValue> {
+  async getMotionDetected(): Promise<CharacteristicValue> {
     // if you need to return an error to show the device as "Not Responding" in the Home app:
     // throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    this.log.debug('Received onGet() event for ' + this.name);
+    this.log.debug('Received getMotionDetection() event for ' + this.name);
 
     let onStatus = 0;
     return new Promise<CharacteristicValue>((resolve, reject) => {
@@ -69,17 +69,17 @@ export class MotionPlatformAccessory extends BasePlatformAccessory {
       this.axInstance.get(this.statusURL).then(res => {
 
         if (res.data.components.main.motion.motion.value !== undefined) {
-          this.log.debug('onGet() SUCCESSFUL for ' + this.name + '. value = ' + res.data.components.main.motion.motion.value);
+          this.log.debug('getMotionDetection() SUCCESSFUL for ' + this.name + '. value = ' + res.data.components.main.motion.motion.value);
           onStatus = (res.data.components.main.motion.motion.value === 'on' ? 1 : 0);
           resolve(onStatus);
 
         } else {
-          this.log.error('onGet() FAILED for ' + this.name + '. Undefined value');
+          this.log.error('getMotionDetection() FAILED for ' + this.name + '. Undefined value');
           reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         }
 
       }).catch(() => {
-        this.log.error('onGet() FAILED for ' + this.name + '. Comm error.');
+        this.log.error('getMotionDetection() FAILED for ' + this.name + '. Comm error.');
         reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       });
     });
