@@ -34,7 +34,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
   private windowShadeLevelCat = 'Blind';
   private motionCat = 'Motion';
   private contactCat = 'Contact';
-
+  
   private categories = [
     this.switchCat,
     this.lightCat,
@@ -270,7 +270,6 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
       }
       case this.motionCat: {
         return new MotionPlatformAccessory(this, accessory);
-      }
       case this.contactCat: {
         return new ContactPlatformAccessory(this, accessory);
       }
