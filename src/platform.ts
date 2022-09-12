@@ -9,6 +9,7 @@ import { FanPlatformAccessory } from './fanAccessory';
 import { GarageDoorPlatformAccessory } from './garageDoorAccessory';
 import { LockPlatformAccessory } from './lockAccessory';
 import { WindowShadeLevelPlatformAccessory } from './windowShadeLevelAccessory';
+import { SensorAccessory } from './sensorAccessory';
 
 /**
  * HomebridgePlatform
@@ -29,6 +30,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
   private garageDoorCat = 'GarageDoor';
   private lockCat = 'SmartLock';
   private windowShadeLevelCat = 'Blind';
+  private sensorCat = 'MotionSensor';
 
   private categories = [
     this.switchCat,
@@ -38,6 +40,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
     this.garageDoorCat,
     this.lockCat,
     this.windowShadeLevelCat,
+    this.sensorCat,
   ];
 
   private locationIDsToIgnore: string[] = [];
@@ -263,6 +266,9 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
       }
       case this.windowShadeLevelCat: {
         return new WindowShadeLevelPlatformAccessory(this, accessory);
+      }
+      case this.sensorCat: {
+        return new SensorAccessory(this, accessory);
       }
       default: {
         throw `Unexpected device category: ${category}`;

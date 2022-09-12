@@ -9,34 +9,44 @@
         "title": "Name",
         "type": "string",
         "required": true,
-        "default": "Smartthings Plug (IK)"},
+        "default": "Smartthings Plug (IK)"
+      },
       "BaseURL": {
         "title": "Base URL",
         "type": "string",
         "required": true,
-        "default": "https://api.smartthings.com/v1/"},
+        "default": "https://api.smartthings.com/v1/"
+      },
       "AccessToken": {
         "title": "Access Token",
         "type": "string",
         "required": true,
-        "default": ""},
+        "default": ""
+      },
       "GarageDoorMaxPoll": {
         "title": "Garage Door Max Poll",
         "type": "integer",
         "required": true,
-        "default": 40},
+        "default": 40
+      },
       "PollLocksSeconds": {
-          "title": "Poll Locks (zero = don't poll)",
-          "type": "integer",
-          "required": false,
-          "default": 10
-        },
+        "title": "Poll Locks (zero = don't poll)",
+        "type": "integer",
+        "required": false,
+        "default": 10
+      },
       "PollDoorsSeconds": {
-          "title": "Poll Garage Doors (zero = don't poll)",
-          "type": "integer",
-          "required": false,
-          "default": 10
-        },
+        "title": "Poll Garage Doors (zero = don't poll)",
+        "type": "integer",
+        "required": false,
+        "default": 10
+      },
+      "PollSensorsSeconds": {
+        "title": "Poll Sensors (zero = don't poll)",
+        "type": "integer",
+        "required": false,
+        "default": 5
+      },
       "IgnoreLocations": {
         "title": "Locations to Ignore",
         "type": "array",
