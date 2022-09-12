@@ -12,6 +12,9 @@ This is yet another smartthings plugin for Homebridge.  This requires no access 
 require a lot of work to install.  It will discover devices automatically as well as unregister devices that are removed
 from your smarttthings network.  This is currently under development.
 
+## New inf version 1.3.0
+Support for motion sensors
+
 ## Fixed in version 1.2.2
 Fixed type error
 
