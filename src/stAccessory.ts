@@ -1,13 +1,15 @@
 import { PlatformAccessory, Logger, API } from 'homebridge';
 import axios = require('axios');
 import { IKHomeBridgeHomebridgePlatform } from './platform';
+import { SwitchService } from './services/switchService';
+import { BaseService } from './services/baseService';
 
 /**
  * Platform Accessory
  * An instance of this class is created for each accessory your platform registers
  * Each accessory may expose multiple services of different service types.
  */
-export abstract class BasePlatformAccessory {
+export abstract class STAccessory {
   // protected service: Service;
 
   /**
@@ -28,6 +30,8 @@ export abstract class BasePlatformAccessory {
   protected healthURL: string;
   protected api: API;
   private _online = true;
+  private allServices = [SwitchService];
+  private allServicesMap: Map<string, typeof BaseService> = new Map();
 
   // Getters
   get accessory() {
@@ -88,6 +92,11 @@ export abstract class BasePlatformAccessory {
           this._online = false;
         }
       });
+
+    // Build services map
+    this.allServices.forEach(service => {
+      this.allServicesMap.set(service.supportedCapability(), service);
+    });
   }
 
   async sendCommand(capability: string, command: string, args?: unknown[]): Promise<void> {
