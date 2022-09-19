@@ -12,6 +12,9 @@ This is yet another smartthings plugin for Homebridge.  This requires no access 
 require a lot of work to install.  It will discover devices automatically as well as unregister devices that are removed
 from your smarttthings network.  This is currently under development.
 
+## Fixed in version 1.3.1
+If motion sensor becomes unresponsive, the plugin would cause Smartthings to restart.  This has been fixed.  
+
 ## New inf version 1.3.0
 Support for motion sensors
 

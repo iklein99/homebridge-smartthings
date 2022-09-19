@@ -1,4 +1,5 @@
-import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
+
+import { Service, PlatformAccessory, CharacteristicValue} from 'homebridge';
 import { BasePlatformAccessory } from './basePlatformAccessory';
 import { IKHomeBridgeHomebridgePlatform } from './platform';
 
@@ -35,6 +36,9 @@ export class SensorAccessory extends BasePlatformAccessory {
     this.requestStatus.bind(this);
 
     this.service = this.accessory.getService(platform.Service.MotionSensor) || this.accessory.addService(platform.Service.MotionSensor);
+    this.service.setCharacteristic(platform.Characteristic.Name, accessory.context.device.label);
+    this.service.getCharacteristic(platform.Characteristic.MotionDetected)
+      .onGet(this.getMotion.bind(this));               // GET - bind to the `getOn` method below
     // this.pushService(platform.Service.MotionSensor, platform.Characteristic.MotionDetected, this.getMotion);
     //this.pushService(platform.Service.TemperatureSensor, platform.Characteristic.CurrentTemperature, this.getTemperature);
 
@@ -52,10 +56,23 @@ export class SensorAccessory extends BasePlatformAccessory {
     if (pollSensorSeconds > 0) {
       this.log.debug(`Polling sensor set to ${pollSensorSeconds}`);
       setInterval(() => {
-        this.platform.log.debug('Updating HomeKit for device ' + accessory.context.device.label);
-        this.getMotion().then((motion) => {
-          this.service.updateCharacteristic(this.platform.Characteristic.MotionDetected, motion);
-        });
+        if (this.online) {
+          this.platform.log.debug('Updating HomeKit for device ' + accessory.context.device.label);
+          this.requestStatus()
+            .then(deviceStatus => {
+              const stMotion: string = deviceStatus.motionSensor.motion.value;
+              if (stMotion === 'active') {
+                this.log.debug(`Status from ${this.name}: True`);
+                this.service.updateCharacteristic(this.platform.Characteristic.MotionDetected, true);
+              } else {
+                this.log.debug(`Status from ${this.name}: False`);
+                this.service.updateCharacteristic(this.platform.Characteristic.MotionDetected, true);
+              }
+            })
+            .catch(() => {
+              this.log.error(`Unable to get status from ${this.name}`);
+            });
+        }
       }, pollSensorSeconds * 1000);
     }
   }
@@ -77,13 +94,15 @@ export class SensorAccessory extends BasePlatformAccessory {
     return new Promise((resolve, reject) => {
       if (!this.online) {
         this.log.error(this.name + ' is offline');
-        return reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+        reject(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
       }
 
-      this.axInstance.get(this.statusURL).then(res => resolve(res.data.components.main)).catch(() => {
-        this.log.error('getMotion() FAILED for ' + this.name + '. Comm error.');
-        reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
-      });
+      this.axInstance.get(this.statusURL)
+        .then(res => resolve(res.data.components.main)).catch(() => {
+          this.log.error('getMotion() FAILED for ' + this.name + '. Comm error.');
+          this.online = false;
+          reject(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+        });
     });
   }
 
@@ -106,21 +125,21 @@ export class SensorAccessory extends BasePlatformAccessory {
     // throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     this.log.debug('Received getMotion() event for ' + this.name);
 
-    const deviceStatus = await this.requestStatus();
+    return new Promise((resolve) => {
+      this.requestStatus()
+        .then(deviceStatus => {
+          const stMotion: string = deviceStatus.motionSensor.motion.value;
+          if (stMotion === 'active') {
+            resolve(true);
+          } else {
+            resolve(false);
+          }
+        })
+        .catch(() => {
+          throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+        });
+    });
 
-    const stMotion: string = deviceStatus.motionSensor.motion.value;
-
-    if (stMotion !== undefined) {
-      this.log.debug('getMotion() SUCCESSFUL for ' + this.name + '. value = ' + stMotion);
-      if (stMotion === 'active') {
-        return true;
-      } else {
-        return false;
-      }
-    } else {
-      this.log.error('getMotion() FAILED for ' + this.name + '. Undefined value');
-      throw(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
-    }
 
 
     // let lockStatus = 0;
