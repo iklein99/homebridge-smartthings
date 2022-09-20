@@ -66,7 +66,7 @@ export class SensorAccessory extends BasePlatformAccessory {
                 this.service.updateCharacteristic(this.platform.Characteristic.MotionDetected, true);
               } else {
                 this.log.debug(`Status from ${this.name}: False`);
-                this.service.updateCharacteristic(this.platform.Characteristic.MotionDetected, true);
+                this.service.updateCharacteristic(this.platform.Characteristic.MotionDetected, false);
               }
             })
             .catch(() => {
