@@ -1,6 +1,7 @@
 import { STAccessory } from '../stAccessory';
 import { Logger } from 'homebridge';
 
+// Comment
 export class BaseService {
   protected log: Logger;
   protected accessory: STAccessory;
