@@ -126,6 +126,10 @@ export class SensorAccessory extends BasePlatformAccessory {
     this.log.debug('Received getMotion() event for ' + this.name);
 
     return new Promise((resolve) => {
+      if (!this.online) {
+        this.log.info(`${this.name} is offline`);
+        throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+      }
       this.requestStatus()
         .then(deviceStatus => {
           const stMotion: string = deviceStatus.motionSensor.motion.value;

@@ -12,6 +12,9 @@ This is yet another smartthings plugin for Homebridge.  This requires no access 
 require a lot of work to install.  It will discover devices automatically as well as unregister devices that are removed
 from your smarttthings network.  This is currently under development.
 
+## Fixed in version 1.3.3
+If motion detector was offline, it resulted in an error that resulted in Homebridge exiting.
+
 ## Fixed in version 1.3.2
 Motion detector was always returning motion after 1.3.1
 ## Fixed in version 1.3.1
