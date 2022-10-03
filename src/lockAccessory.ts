@@ -57,6 +57,11 @@ export class LockPlatformAccessory extends BasePlatformAccessory {
     if (pollLocksSeconds > 0) {
       this.log.debug(`Polling lock set to ${pollLocksSeconds}`);
       setInterval(() => {
+        if (!this.online) {
+          this.log.debug(`${this.name} is offline`);
+          return;
+        }
+
         if (!this.lockInTransition) {
           this.platform.log.debug('Updating HomeKit for device ' + accessory.context.device.label);
 
@@ -159,11 +164,11 @@ export class LockPlatformAccessory extends BasePlatformAccessory {
     this.log.debug('Received getCurrentState() event for ' + this.name);
 
     let lockStatus = 0;
-    return new Promise<CharacteristicValue>((resolve, reject) => {
+    return new Promise<CharacteristicValue>((resolve) => {
 
       if (!this.online) {
-        this.log.error(this.name + ' is offline');
-        return reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+        this.log.info(this.name + ' is offline');
+        throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
       }
 
       this.axInstance.get(this.statusURL).then(res => {
@@ -187,12 +192,12 @@ export class LockPlatformAccessory extends BasePlatformAccessory {
           resolve(lockStatus);
         } else {
           this.log.error('onGet() FAILED for ' + this.name + '. Undefined value');
-          reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+          throw new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
         }
 
       }).catch(() => {
         this.log.error('onGet() FAILED for ' + this.name + '. Comm error.');
-        reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+        throw new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
       });
     });
   }
