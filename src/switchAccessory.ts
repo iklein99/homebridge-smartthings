@@ -39,6 +39,16 @@ export class SwitchPlatformAccessory extends BasePlatformAccessory {
     this.service.getCharacteristic(platform.Characteristic.On)
       .onSet(this.setOn.bind(this))                // SET - bind to the `setOn` method below
       .onGet(this.getOn.bind(this));               // GET - bind to the `getOn` method below
+
+    let pollSeconds = 10;
+    if (platform.config.PollSwitchesAndLights !== undefined) {
+      pollSeconds = platform.config.PollSwitchesAndLights;
+    }
+
+    if (pollSeconds > 0) {
+      this.startPollingState(pollSeconds, this.getOn.bind(this), this.service, platform.Characteristic.On);
+    }
+
   }
 
 

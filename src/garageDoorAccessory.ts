@@ -74,8 +74,8 @@ export class GarageDoorPlatformAccessory extends BasePlatformAccessory {
     }
 
     if (pollDoorsSeconds > 0) {
-      this.startPollingState(pollDoorsSeconds, this.getDoorState, this.service,
-        this.platform.Characteristic.CurrentDoorState, this.platform.Characteristic.TargetDoorState, this.getTargetDoorState);
+      this.startPollingState(pollDoorsSeconds, this.getDoorState.bind(this), this.service,
+        this.platform.Characteristic.CurrentDoorState, this.platform.Characteristic.TargetDoorState, this.getTargetDoorState.bind(this));
     }
   }
 

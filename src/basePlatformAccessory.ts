@@ -76,13 +76,15 @@ export abstract class BasePlatformAccessory {
       //getValue.bind(this);
       setInterval(() => {
         if (this.online) {
-          getValue.bind(this)().then((v) => {
+          // getValue.bind(this)().then((v) => {
+          getValue().then((v) => {
             this.log.debug(`${this.name} polling...`);
             service.updateCharacteristic(chracteristic, v);
           });
           // Update target if we have to
           if (targetStateCharacteristic && getTargetState) {
-            service.updateCharacteristic(targetStateCharacteristic, getTargetState.bind(this)());
+            //service.updateCharacteristic(targetStateCharacteristic, getTargetState.bind(this)());
+            service.updateCharacteristic(targetStateCharacteristic, getTargetState());
           }
         }
       }, pollSeconds * 1000);

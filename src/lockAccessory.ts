@@ -63,8 +63,8 @@ export class LockPlatformAccessory extends BasePlatformAccessory {
     }
 
     if (pollLocksSeconds > 0) {
-      this.startPollingState(pollLocksSeconds, this.getCurrentState, this.service, this.platform.Characteristic.LockCurrentState,
-        this.platform.Characteristic.LockTargetState, this.getTargetState);
+      this.startPollingState(pollLocksSeconds, this.getCurrentState.bind(this), this.service, this.platform.Characteristic.LockCurrentState,
+        this.platform.Characteristic.LockTargetState, this.getTargetState.bind(this));
     }
   }
 

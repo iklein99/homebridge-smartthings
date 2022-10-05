@@ -46,7 +46,7 @@ export class SensorAccessory extends BasePlatformAccessory {
     }
 
     if (pollSensorSeconds > 0) {
-      this.startPollingState(pollSensorSeconds, this.getMotion, this.service, this.characteristic.MotionDetected);
+      this.startPollingState(pollSensorSeconds, this.getMotion.bind(this), this.service, this.characteristic.MotionDetected);
     }
   }
 
