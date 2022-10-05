@@ -1,4 +1,4 @@
-import { PlatformAccessory, Logger, API, Characteristic } from 'homebridge';
+import { PlatformAccessory, Logger, API, Characteristic, CharacteristicValue, Service } from 'homebridge';
 import axios = require('axios');
 import { IKHomeBridgeHomebridgePlatform } from './platform';
 
@@ -67,6 +67,20 @@ export abstract class BasePlatformAccessory {
           this.online = false;
         }
       });
+  }
+
+  protected startPollingState(getValue: () => Promise<CharacteristicValue>, service: Service, pollSeconds: number) {
+    if (pollSeconds > 0) {
+      //getValue.bind(this);
+      setInterval(() => {
+        if (this.online) {
+          getValue.bind(this)().then((v) => {
+            this.log.debug(`${this.name} polling...`);
+            service.updateCharacteristic(this.characteristic.OccupancyDetected, v);
+          });
+        }
+      }, pollSeconds * 1000);
+    }
   }
 
   async sendCommand(capability: string, command: string, args?: unknown[]): Promise<void> {

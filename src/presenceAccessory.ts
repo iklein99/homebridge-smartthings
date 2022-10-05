@@ -46,41 +46,9 @@ export class PresencePlatformAccessory extends BasePlatformAccessory {
     }
 
     if (pollSeconds > 0) {
-      setInterval(() => {
-        if (this.online) {
-          this.getOn().then((v) => {
-            this.log.debug(`${this.name} polling...`);
-            this.service.updateCharacteristic(this.characteristic.OccupancyDetected, v);
-          });
-        }
-      }, pollSeconds * 1000);
+      this.startPollingState(this.getOn, this.service, pollSeconds);
     }
   }
-
-
-  /**
-   * Handle "SET" requests from HomeKit
-   * These are sent when the user changes the state of an accessory, for example, turning on a Light bulb.
-   */
-  // async setOn(value: CharacteristicValue) {
-
-  //   this.log.debug('Received onSet(' + value + ') event for ' + this.name);
-
-  //   if (!this.online) {
-  //     this.log.error(this.name + ' is offline');
-  //     throw new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-  //   }
-
-  //   this.axInstance.post(this.commandURL, JSON.stringify([{
-  //     capability: 'switch',
-  //     command: value ? 'on' : 'off',
-  //   }])).then(() => {
-  //     this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
-  //   }).catch(reason => {
-  //     this.log.error('onSet(' + value + ') FAILED for ' + this.name + ': reason ' + reason);
-  //     throw(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
-  //   });
-  // }
 
   /**
    * Handle the "GET" requests from HomeKit
