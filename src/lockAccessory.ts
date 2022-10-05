@@ -10,8 +10,8 @@ import { IKHomeBridgeHomebridgePlatform } from './platform';
 export class LockPlatformAccessory extends BasePlatformAccessory {
   private service: Service;
   private targetState = this.platform.Characteristic.LockTargetState.UNSECURED;
-  private timer;
-  private pollTry = 0;
+  //private timer;
+  //private pollTry = 0;
   private lockInTransition = false;
 
   // private log: Logger;
@@ -45,6 +45,14 @@ export class LockPlatformAccessory extends BasePlatformAccessory {
       .onSet(this.setTargetState.bind(this))
       .onGet(this.getTargetState.bind(this));
 
+    // Set Target State to current state to start
+    this.getCurrentState().then(currentState => {
+      if (currentState === platform.Characteristic.LockCurrentState.UNSECURED) {
+        this.targetState = platform.Characteristic.LockTargetState.UNSECURED;
+      } else {
+        this.targetState = platform.Characteristic.LockTargetState.SECURED;
+      }
+    });
     /**
      * Updating characteristics values asynchronously.
      */
@@ -55,37 +63,8 @@ export class LockPlatformAccessory extends BasePlatformAccessory {
     }
 
     if (pollLocksSeconds > 0) {
-      this.log.debug(`Polling lock set to ${pollLocksSeconds}`);
-      setInterval(() => {
-        if (!this.online) {
-          this.log.debug(`${this.name} is offline`);
-          return;
-        }
-
-        if (!this.lockInTransition) {
-          this.platform.log.debug('Updating HomeKit for device ' + accessory.context.device.label);
-
-          this.getCurrentState().then((lockState) => {
-            this.service.updateCharacteristic(this.platform.Characteristic.LockCurrentState, lockState);
-            switch (lockState) {
-              case this.platform.Characteristic.LockCurrentState.SECURED: {
-                this.service.updateCharacteristic(this.platform.Characteristic.LockTargetState,
-                  this.platform.Characteristic.LockTargetState.SECURED);
-                this.targetState = this.platform.Characteristic.LockTargetState.SECURED as number;
-                break;
-              }
-              case this.platform.Characteristic.LockCurrentState.UNSECURED: {
-                this.service.updateCharacteristic(this.platform.Characteristic.LockTargetState,
-                  this.platform.Characteristic.LockTargetState.UNSECURED);
-                this.targetState = this.platform.Characteristic.LockTargetState.UNSECURED as number;
-                break;
-              }
-            }
-          });
-        } else {
-          this.log.debug(`${this.name} in transition - skipping check`);
-        }
-      }, pollLocksSeconds * 1000);
+      this.startPollingState(pollLocksSeconds, this.getCurrentState, this.service, this.platform.Characteristic.LockCurrentState,
+        this.platform.Characteristic.LockTargetState, this.getTargetState);
     }
   }
 
@@ -113,31 +92,13 @@ export class LockPlatformAccessory extends BasePlatformAccessory {
       command: value ? 'lock' : 'unlock',
     }])).then(() => {
       this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
-      this.pollTry = 0;
-      this.log.debug('Polling lock status...');
-      this.timer = setInterval(this.pollLockState = this.pollLockState.bind(this), 1000, value);
+      // this.pollTry = 0;
+      // this.log.debug('Polling lock status...');
+      // this.timer = setInterval(this.pollLockState = this.pollLockState.bind(this), 1000, value);
     }).catch(reason => {
       this.lockInTransition = false;
       this.log.error('onSet(' + value + ') FAILED for ' + this.name + ': reason ' + reason);
       throw (new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
-    });
-  }
-
-  private async pollLockState(targetValue: CharacteristicValue) {
-    this.log.debug(`${this.name} in transition.  Checking state...`);
-    this.getCurrentState().then(value => {
-      this.log.debug(`${this.name} is at state ${value}`);
-      if (value === targetValue) {
-        this.service.updateCharacteristic(this.platform.Characteristic.LockTargetState, value);
-        this.service.updateCharacteristic(this.platform.Characteristic.LockCurrentState, value);
-        this.lockInTransition = false;
-        clearInterval(this.timer);
-      } else {
-        if (++this.pollTry > 120) {
-          clearInterval(this.timer);
-          this.lockInTransition = false;
-        }
-      }
     });
   }
 

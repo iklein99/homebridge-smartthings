@@ -10,8 +10,9 @@ import { IKHomeBridgeHomebridgePlatform } from './platform';
  */
 export class GarageDoorPlatformAccessory extends BasePlatformAccessory {
   private service: Service;
-  private intervalId;
-  private getStatusTryCount = 0;
+  private targetDoorState;
+  // private intervalId;
+  // private getStatusTryCount = 0;
   private doorInTransition = false;
   // private  MAX_POLLING_COUNT = 30;  // 30 seconds
   // private platform: IKHomeBridgeHomebridgePlatform;
@@ -46,12 +47,24 @@ export class GarageDoorPlatformAccessory extends BasePlatformAccessory {
 
     this.service.getCharacteristic(platform.Characteristic.TargetDoorState)
       .onSet(this.setDoorState.bind(this));
+    this.service.getCharacteristic(platform.Characteristic.TargetDoorState)
+      .onGet(this.getDoorState.bind(this));
     this.service.getCharacteristic(platform.Characteristic.CurrentDoorState)
       .onGet(this.getDoorState.bind(this));
     this.service.getCharacteristic(platform.Characteristic.ObstructionDetected)
       .onGet(() => {
         return false;
       });
+
+    // Set target door state to current state
+    this.getDoorState().then(currentDoorState => {
+      if (currentDoorState === platform.Characteristic.CurrentDoorState.OPEN ||
+        currentDoorState === platform.Characteristic.CurrentDoorState.OPENING) {
+        this.targetDoorState = platform.Characteristic.TargetDoorState.OPEN;
+      } else {
+        this.targetDoorState = platform.Characteristic.TargetDoorState.CLOSED;
+      }
+    });
 
     // Update states asynchronously
 
@@ -61,31 +74,17 @@ export class GarageDoorPlatformAccessory extends BasePlatformAccessory {
     }
 
     if (pollDoorsSeconds > 0) {
-      this.log.debug(`Polling lock set to ${pollDoorsSeconds}`);
-      setInterval(() => {
-        if (!this.doorInTransition) {
-          this.platform.log.debug('Updating HomeKit for device ' + accessory.context.device.label);
-
-          this.getDoorState().then((doorState) => {
-            this.service.updateCharacteristic(this.platform.Characteristic.CurrentDoorState, doorState);
-            switch (doorState) {
-              case this.platform.Characteristic.CurrentDoorState.CLOSED: {
-                this.service.updateCharacteristic(this.platform.Characteristic.TargetDoorState,
-                  this.platform.Characteristic.TargetDoorState.CLOSED);
-                break;
-              }
-              case this.platform.Characteristic.CurrentDoorState.OPEN: {
-                this.service.updateCharacteristic(this.platform.Characteristic.TargetDoorState,
-                  this.platform.Characteristic.TargetDoorState.OPEN);
-                break;
-              }
-            }
-          });
-        }
-      }, pollDoorsSeconds * 1000);
+      this.startPollingState(pollDoorsSeconds, this.getDoorState, this.service,
+        this.platform.Characteristic.CurrentDoorState, this.platform.Characteristic.TargetDoorState, this.getTargetDoorState);
     }
   }
 
+  //
+  // Should handle the getting of the current door state
+  //
+  getTargetDoorState() {
+    return this.targetDoorState;
+  }
 
   /**
    * Handle "SET" requests from HomeKit
@@ -100,14 +99,15 @@ export class GarageDoorPlatformAccessory extends BasePlatformAccessory {
         this.log.error(this.accessory.context.device.label + ' is offline');
         reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       } else {
+        this.targetDoorState = value;
         this.doorInTransition = true;
         this.axInstance.post(this.commandURL, JSON.stringify([{
           capability: 'doorControl',
           command: value ? 'close' : 'open',
         }])).then(() => {
           this.log.debug('onDoorState(' + value + ') SUCCESSFUL for ' + this.name);
-          this.getStatusTryCount = 0;
-          this.intervalId = setInterval(this.poleDoorStatus, 1000, this, value);
+          // this.getStatusTryCount = 0;
+          // this.intervalId = setInterval(this.poleDoorStatus, 1000, this, value);
           resolve();
         }).catch(reason => {
           this.log.error('setDoorState(' + value + ') FAILED for ' + this.name + ': reason ' + reason);
@@ -116,45 +116,6 @@ export class GarageDoorPlatformAccessory extends BasePlatformAccessory {
         });
       }
     });
-  }
-
-  poleDoorStatus(t, doorCommand): void {
-
-    // Determine the target state
-    const targetState = doorCommand ? t.platform.Characteristic.CurrentDoorState.CLOSED :
-      t.platform.Characteristic.CurrentDoorState.OPEN;
-
-    // Check to see if we are there yet
-    t.axInstance.get(t.statusURL).then(res => {
-      const value = res.data.components.main.doorControl.door.value;
-      t.log.debug('Polling ' + t.name + ': ' + value);
-
-      // Closed
-      if ((value === 'closed') && (targetState === t.platform.Characteristic.CurrentDoorState.CLOSED)) {
-        t.service.updateCharacteristic(t.platform.Characteristic.CurrentDoorState,
-          t.platform.Characteristic.CurrentDoorState.CLOSED);
-        t.doorInTransition = false;
-        clearInterval(t.intervalId);
-
-        // Open
-      } else if ((value === 'open') && (targetState === t.platform.Characteristic.CurrentDoorState.OPEN)) {
-        t.service.updateCharacteristic(t.platform.Characteristic.CurrentDoorState,
-          t.platform.Characteristic.CurrentDoorState.OPEN);
-        t.doorInTransition = false;
-        clearInterval(t.intervalId);
-      }
-    }).catch(reason => {
-      t.log.error('Failed to get door status while polling: ' + reason);
-      t.doorInTransition = false;
-      clearInterval(t.intervalId);
-    });
-
-    // Increment the count of tries.  If exceeded, then quit.
-    if (++t.getStatusTryCount > t.platform.config.GarageDoorMaxPoll) {
-      t.log.error('Polling door status for ' + t.name + ' max count exceeded');
-      t.doorInTransition = false;
-      clearInterval(t.intervalId);
-    }
   }
 
   /**

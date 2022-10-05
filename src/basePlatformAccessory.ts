@@ -1,4 +1,4 @@
-import { PlatformAccessory, Logger, API, Characteristic, CharacteristicValue, Service } from 'homebridge';
+import { PlatformAccessory, Logger, API, Characteristic, CharacteristicValue, Service, WithUUID } from 'homebridge';
 import axios = require('axios');
 import { IKHomeBridgeHomebridgePlatform } from './platform';
 
@@ -69,15 +69,21 @@ export abstract class BasePlatformAccessory {
       });
   }
 
-  protected startPollingState(getValue: () => Promise<CharacteristicValue>, service: Service, pollSeconds: number) {
+  protected startPollingState(pollSeconds: number, getValue: () => Promise<CharacteristicValue>, service: Service,
+    chracteristic: WithUUID<new () => Characteristic>, targetStateCharacteristic?:WithUUID<new () => Characteristic>,
+    getTargetState?: () => CharacteristicValue) {
     if (pollSeconds > 0) {
       //getValue.bind(this);
       setInterval(() => {
         if (this.online) {
           getValue.bind(this)().then((v) => {
             this.log.debug(`${this.name} polling...`);
-            service.updateCharacteristic(this.characteristic.OccupancyDetected, v);
+            service.updateCharacteristic(chracteristic, v);
           });
+          // Update target if we have to
+          if (targetStateCharacteristic && getTargetState) {
+            service.updateCharacteristic(targetStateCharacteristic, getTargetState.bind(this)());
+          }
         }
       }, pollSeconds * 1000);
     }

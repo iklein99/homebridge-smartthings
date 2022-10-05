@@ -46,7 +46,7 @@ export class PresencePlatformAccessory extends BasePlatformAccessory {
     }
 
     if (pollSeconds > 0) {
-      this.startPollingState(this.getOn, this.service, pollSeconds);
+      this.startPollingState(pollSeconds, this.getOn, this.service, this.characteristic.OccupancyDetected);
     }
   }
 
