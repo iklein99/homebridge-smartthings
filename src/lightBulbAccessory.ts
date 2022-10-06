@@ -65,6 +65,16 @@ export class LightbulbPlatformAccessory extends BasePlatformAccessory {
         .onSet(this.setSaturation.bind(this))
         .onGet(this.getSaturation.bind(this));
     }
+
+    let pollSeconds = 10;
+
+    if (this.platform.config.PollSwitchesAndLightsSeconds !== undefined) {
+      pollSeconds = this.platform.config.PollSwitchesAndLightsSeconds;
+    }
+
+    if (pollSeconds > 0) {
+      this.startPollingState(pollSeconds, this.getOn.bind(this), this.service, platform.Characteristic.On);
+    }
   }
 
 
