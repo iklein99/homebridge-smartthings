@@ -52,6 +52,10 @@ export class LockPlatformAccessory extends BasePlatformAccessory {
       } else {
         this.targetState = platform.Characteristic.LockTargetState.SECURED;
       }
+    }).catch(() => {
+      this.log.error(`Failed to get current state for ${this.name} on init`);
+      this.online = false;
+      this.targetState = platform.Characteristic.LockTargetState.SECURED;
     });
     /**
      * Updating characteristics values asynchronously.
@@ -132,11 +136,16 @@ export class LockPlatformAccessory extends BasePlatformAccessory {
         throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
       }
 
-      this.axInstance.get(this.statusURL).then(res => {
+      //this.axInstance.get(this.statusURL).then(res => {
+      this.refreshStatus().then(success => {
+        if (!success) {
+          throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+        }
 
-        if (res.data.components.main.lock.lock.value !== undefined) {
-          this.log.debug('onGet() SUCCESSFUL for ' + this.name + '. value = ' + res.data.components.main.lock.lock.value);
-          switch (res.data.components.main.lock.lock.value) {
+        const status = this.deviceStatus.status.lock.lock.value;
+        if (status !== undefined) {
+          this.log.debug('onGet() SUCCESSFUL for ' + this.name + '. value = ' + status);
+          switch (status) {
             case 'locked': {
               lockStatus = this.platform.Characteristic.LockCurrentState.SECURED;
               break;
@@ -155,10 +164,6 @@ export class LockPlatformAccessory extends BasePlatformAccessory {
           this.log.error('onGet() FAILED for ' + this.name + '. Undefined value');
           throw new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
         }
-
-      }).catch(() => {
-        this.log.error('onGet() FAILED for ' + this.name + '. Comm error.');
-        throw new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
       });
     });
   }

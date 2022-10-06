@@ -153,10 +153,15 @@ export class FanPlatformAccessory extends BasePlatformAccessory {
         return reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       }
 
-      this.axInstance.get(this.statusURL).then(res => {
+      this.refreshStatus().then((success) => {
+        if (!success) {
+          this.online = false;
+          this.log.error(`Could not get device status for ${this.name}`);
+          return reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+        }
 
-        if (res.data.components.main.switch.switch.value !== undefined) {
-          level = res.data.components.main.switchLevel.level.value;
+        if (this.deviceStatus.status.switchLevel.level.value !== undefined) {
+          level = this.deviceStatus.status.switchLevel.level.value;
           this.log.debug('getLevel() SUCCESSFUL for ' + this.name + '. value = ' + level);
           resolve(level);
 
@@ -164,10 +169,6 @@ export class FanPlatformAccessory extends BasePlatformAccessory {
           this.log.error('getLevel() FAILED for ' + this.name + '. Undefined value');
           reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         }
-
-      }).catch(() => {
-        this.log.error('getLevel() FAILED for ' + this.name + '. Comm error.');
-        reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       });
     });
   }

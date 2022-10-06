@@ -111,7 +111,7 @@ export class LightbulbPlatformAccessory extends BasePlatformAccessory {
   async getOn(): Promise<CharacteristicValue> {
     // if you need to return an error to show the device as "Not Responding" in the Home app:
     // throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    let onStatus = 0;
+
     this.log.debug('Received onGet() event for ' + this.name);
 
     return new Promise<CharacteristicValue>((resolve, reject) => {
@@ -119,20 +119,22 @@ export class LightbulbPlatformAccessory extends BasePlatformAccessory {
         this.log.error(this.accessory.context.device.label + ' is offline');
         return reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       }
-      this.axInstance.get(this.statusURL).then(res => {
+      this.refreshStatus().then((success) => {
+        if (!success) {
+          this.online = false;
+          this.log.error(`Could not get device status for ${this.name}`);
+          return reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+        }
 
-        if (res.data.components.main.switch.switch.value !== undefined) {
-          this.log.debug('onGet() SUCCESSFUL for ' + this.name + '. value = ' + res.data.components.main.switch.switch.value);
-          onStatus = (res.data.components.main.switch.switch.value === 'on' ? 1 : 0);
-          resolve(onStatus);
+        const status = this.deviceStatus.status.switch.switch.value;
+
+        if (status !== undefined) {
+          this.log.debug('onGet() SUCCESSFUL for ' + this.name + '. value = ' + status);
+          resolve(status === 'on' ? 1 : 0);
         } else {
           this.log.debug('onGet() FAILED for ' + this.name + '. Undefined value');
           reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         }
-
-      }).catch(() => {
-        this.log.debug('onGet() FAILED for ' + this.name + '. Comm error');
-        reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       });
     });
   }
@@ -172,11 +174,15 @@ export class LightbulbPlatformAccessory extends BasePlatformAccessory {
         this.log.error(this.accessory.context.device.label + 'is offline');
         return reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       }
+      this.refreshStatus().then((success) => {
+        if (!success) {
+          this.online = false;
+          this.log.error(`Could not get device status for ${this.name}`);
+          return reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+        }
 
-      this.axInstance.get(this.statusURL).then(res => {
-
-        if (res.data.components.main.switch.switch.value !== undefined) {
-          level = res.data.components.main.switchLevel.level.value;
+        if (this.deviceStatus.status.switchLevel.level.value !== undefined) {
+          level = this.deviceStatus.status.switchLevel.level.value;
           this.log.debug('getLevel() SUCCESSFUL for ' + this.name + '. value = ' + level);
           resolve(level);
 
@@ -184,10 +190,6 @@ export class LightbulbPlatformAccessory extends BasePlatformAccessory {
           this.log.error('getLevel() FAILED for ' + this.name + '. Undefined value');
           reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         }
-
-      }).catch(() => {
-        this.log.error('getLevel() FAILED for ' + this.name + '. Comm error.');
-        reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       });
     });
   }
@@ -210,12 +212,17 @@ export class LightbulbPlatformAccessory extends BasePlatformAccessory {
 
   async getColorTemp(): Promise<CharacteristicValue> {
     return new Promise((resolve, reject) => {
-      this.axInstance.get(this.statusURL).then(res => {
+      this.refreshStatus().then((success) => {
+        if (!success) {
+          this.online = false;
+          this.log.error(`Could not get device status for ${this.name}`);
+          return reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+        }
 
         let stTemperature;
 
-        if (res.data.components.main.colorTemperature.colorTemperature.value !== undefined) {
-          stTemperature = Math.min(res.data.components.main.colorTemperature.colorTemperature.value, 6500);
+        if (this.deviceStatus.status.colorTemperature.colorTemperature.value !== undefined) {
+          stTemperature = Math.min(this.deviceStatus.status.colorTemperature.colorTemperature.value, 6500);
           this.log.debug('getColorTemperature() SUCCESSFUL for ' + this.name + '. value = ' + stTemperature);
           // Convert number to the homebridge compatible value
           const hbTemperature = 500 - ((stTemperature / 6500) * 360);
@@ -226,9 +233,6 @@ export class LightbulbPlatformAccessory extends BasePlatformAccessory {
           reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         }
 
-      }).catch(() => {
-        this.log.error('getColorTemperature() FAILED for ' + this.name + '. Comm error.');
-        reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       });
     });
   }
@@ -246,10 +250,15 @@ export class LightbulbPlatformAccessory extends BasePlatformAccessory {
 
   async getHue(): Promise < CharacteristicValue > {
     return new Promise((resolve, reject) => {
-      this.axInstance.get(this.statusURL).then(res => {
+      this.refreshStatus().then((success) => {
+        if (!success) {
+          this.online = false;
+          this.log.error(`Could not get device status for ${this.name}`);
+          return reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+        }
 
-        if (res.data.components.main.colorControl.hue.value !== undefined) {
-          const hue = res.data.components.main.colorControl.hue.value;
+        if (this.deviceStatus.status.colorControl.hue.value !== undefined) {
+          const hue = this.deviceStatus.status.colorControl.hue.value;
           this.log.debug('getHue() SUCCESSFUL for ' + this.name + '. value = ' + hue);
           const hueArc = Math.round((hue / 100) * 360);
           this.log.debug(`Hue Percent of ${hue} converted to ${hueArc}.`);
@@ -260,9 +269,6 @@ export class LightbulbPlatformAccessory extends BasePlatformAccessory {
           reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         }
 
-      }).catch(() => {
-        this.log.error('getHue() FAILED for ' + this.name + '. Comm error.');
-        reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       });
     });
   }
@@ -279,10 +285,15 @@ export class LightbulbPlatformAccessory extends BasePlatformAccessory {
 
   async getSaturation(): Promise < CharacteristicValue > {
     return new Promise((resolve, reject) => {
-      this.axInstance.get(this.statusURL).then(res => {
+      this.refreshStatus().then((success) => {
+        if (!success) {
+          this.online = false;
+          this.log.error(`Could not get device status for ${this.name}`);
+          return reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+        }
 
-        if (res.data.components.main.colorControl.saturation.value !== undefined) {
-          const satPct = res.data.components.main.colorControl.saturation.value;
+        if (this.deviceStatus.status.colorControl.saturation.value !== undefined) {
+          const satPct = this.deviceStatus.status.colorControl.saturation.value;
           this.log.debug('getSaturation() SUCCESSFUL for ' + this.name + '. value = ' + satPct);
           // Convert saturation from percent to degrees
           resolve(satPct);

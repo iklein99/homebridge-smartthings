@@ -69,21 +69,21 @@ export class SensorAccessory extends BasePlatformAccessory {
     // throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     this.log.debug('Received getMotion() event for ' + this.name);
 
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       if (!this.online) {
         this.log.info(`${this.name} is offline`);
         throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
       }
-      this.axInstance.get(this.statusURL)
-        .then(res => {
-          const motionValue = res.data.components.main.motionSensor.motion.value;
+      this.refreshStatus()
+      //this.axInstance.get(this.statusURL)
+        .then(success => {
+          if (!success) {
+            this.online = false;
+            return reject (new this.platform.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+          }
+          const motionValue = this.deviceStatus.status.motionSensor.motion.value;
           this.log.debug(`Motion value from ${this.name}: ${motionValue}`);
           resolve(motionValue === 'active' ? true : false);
-        })
-        .catch((reason) => {
-          this.log.error('getMotion() FAILED for ' + this.name + '. ' + reason);
-          this.online = false;
-          throw new this.platform.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
         });
     });
   }

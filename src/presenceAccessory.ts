@@ -76,21 +76,22 @@ export class PresencePlatformAccessory extends BasePlatformAccessory {
         return reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       }
 
-      this.axInstance.get(this.statusURL).then(res => {
+      this.refreshStatus().then(success => {
 
-        if (res.data.components.main.presenceSensor.presence.value !== undefined) {
-          this.log.debug('onGet() SUCCESSFUL for ' + this.name + '. value = ' + res.data.components.main.presenceSensor.presence.value);
-          onStatus = (res.data.components.main.presenceSensor.presence.value === 'present' ? 1 : 0);
+        if (!success) {
+          this.online = false;
+          return reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+        }
+
+        if (this.deviceStatus.status.presenceSensor.presence.value !== undefined) {
+          const status = this.deviceStatus.status.presenceSensor.presence.value;
+          this.log.debug('onGet() SUCCESSFUL for ' + this.name + '. value = ' + status);
+          onStatus = (status === 'present' ? 1 : 0);
           resolve(onStatus);
-
         } else {
           this.log.error('onGet() FAILED for ' + this.name + '. Undefined value');
           reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         }
-
-      }).catch(() => {
-        this.log.error('onGet() FAILED for ' + this.name + '. Comm error.');
-        reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       });
     });
   }

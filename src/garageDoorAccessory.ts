@@ -64,6 +64,8 @@ export class GarageDoorPlatformAccessory extends BasePlatformAccessory {
       } else {
         this.targetDoorState = platform.Characteristic.TargetDoorState.CLOSED;
       }
+    }).catch(()=> {
+      this.targetDoorState = platform.Characteristic.TargetDoorState.CLOSED;
     });
 
     // Update states asynchronously
@@ -135,17 +137,26 @@ export class GarageDoorPlatformAccessory extends BasePlatformAccessory {
     // if you need to return an error to show the device as "Not Responding" in the Home app:
     // throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
 
-    const states = this.platform.Characteristic.CurrentDoorState;
+    //const states = this.platform.Characteristic.CurrentDoorState;
     return new Promise<CharacteristicValue>((resolve, reject) => {
+      const states = this.platform.Characteristic.CurrentDoorState;
 
       if (!this.online) {
-        this.log.error(this.accessory.context.device.label + ' is offline');
+        this.log.error(this.name + ' is offline');
         return reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       }
 
-      this.axInstance.get(this.statusURL).then(res => {
+      //this.axInstance.get(this.statusURL).then(res => {
+      this.refreshStatus().then(success => {
 
-        const value = res.data.components.main.doorControl.door.value;
+        if (!success) {
+          //return reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+          this.online = false;
+          throw new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+        }
+
+        const value = this.deviceStatus.status.doorControl.door.value;
+
         if (value !== undefined) {
           //  value = null;
           this.log.debug('getDoorState() SUCCESSFUL for ' + this.name + '. value = ' + value);
@@ -172,18 +183,15 @@ export class GarageDoorPlatformAccessory extends BasePlatformAccessory {
               break;
             }
             default: {
-              this.log.debug(`Invalid door state ${value}.`);
-              throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+              this.log.error(`Invalid door state ${value}.`);
+              return reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
             }
           }
         } else {
           this.log.error('Got unexpected DOOR STATE: ' + value);
+          // reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
           reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         }
-
-      }).catch((reason) => {
-        this.log.error('getDoorState() FAILED for ' + this.name + '. Comm error ' + reason);
-        reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       });
     });
   }

@@ -72,7 +72,7 @@ export class SwitchPlatformAccessory extends BasePlatformAccessory {
       this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
     }).catch(reason => {
       this.log.error('onSet(' + value + ') FAILED for ' + this.name + ': reason ' + reason);
-      throw(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+      throw (new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
     });
   }
 
@@ -94,7 +94,7 @@ export class SwitchPlatformAccessory extends BasePlatformAccessory {
     // throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     this.log.debug('Received onGet() event for ' + this.name);
 
-    let onStatus = 0;
+    //let onStatus = 0;
     return new Promise<CharacteristicValue>((resolve, reject) => {
 
       if (!this.online) {
@@ -102,21 +102,25 @@ export class SwitchPlatformAccessory extends BasePlatformAccessory {
         return reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       }
 
-      this.axInstance.get(this.statusURL).then(res => {
+      // this.axInstance.get(this.statusURL).then(res => {
 
-        if (res.data.components.main.switch.switch.value !== undefined) {
-          this.log.debug('onGet() SUCCESSFUL for ' + this.name + '. value = ' + res.data.components.main.switch.switch.value);
-          onStatus = (res.data.components.main.switch.switch.value === 'on' ? 1 : 0);
-          resolve(onStatus);
+      //   if (res.data.components.main.switch.switch.value !== undefined) {
+      //     this.log.debug('onGet() SUCCESSFUL for ' + this.name + '. value = ' + res.data.components.main.switch.switch.value);
+      //     onStatus = (res.data.components.main.switch.switch.value === 'on' ? 1 : 0);
+      //     resolve(onStatus);
 
+      this.refreshStatus().then((success) => {
+        if (!success) {
+          this.online = false;
+          reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+        } else if (this.deviceStatus.status !== undefined && this.deviceStatus.status.switch.switch.value !== undefined) {
+          const onStatus = this.deviceStatus.status.switch.switch.value;
+          this.log.debug('onGet() SUCCESSFUL for ' + this.name + '. value = ' + onStatus);
+          resolve(onStatus === 'on' ? 1 : 0);
         } else {
-          this.log.error('onGet() FAILED for ' + this.name + '. Undefined value');
+          this.log.error('onGet() FAILED for ' + this.name + '. Unknown status.');
           reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         }
-
-      }).catch(() => {
-        this.log.error('onGet() FAILED for ' + this.name + '. Comm error.');
-        reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       });
     });
   }

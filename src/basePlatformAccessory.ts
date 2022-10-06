@@ -2,6 +2,11 @@ import { PlatformAccessory, Logger, API, Characteristic, CharacteristicValue, Se
 import axios = require('axios');
 import { IKHomeBridgeHomebridgePlatform } from './platform';
 
+type DeviceStatus = {
+  timestamp: number;
+  //status: Record<string, unknown>;
+  status: any;
+};
 /**
  * Platform Accessory
  * An instance of this class is created for each accessory your platform registers
@@ -28,6 +33,7 @@ export abstract class BasePlatformAccessory {
   protected healthURL: string;
   protected api: API;
   protected online = true;
+  protected deviceStatus: DeviceStatus = { timestamp: 0, status: undefined };
 
   constructor(
     platform: IKHomeBridgeHomebridgePlatform,
@@ -69,21 +75,40 @@ export abstract class BasePlatformAccessory {
       });
   }
 
+  // Called by subclasses to refresh the status for the device.  Will only refresh if it has been more than
+  // 5 seconds since last refresh
+  //
+  protected async refreshStatus(): Promise<boolean> {
+    if (Date.now() - this.deviceStatus.timestamp > 3000) {
+      try {
+        const res = await this.axInstance.get(this.statusURL);
+        if (res.data.components.main !== undefined) {
+          this.deviceStatus.status = res.data.components.main;
+          this.deviceStatus.timestamp = Date.now();
+        }
+      } catch (error) {
+        this.log.error(`Failed to request status from ${this.name}: ${error}`);
+        return false;
+      }
+    }
+    return true;
+  }
+
   protected startPollingState(pollSeconds: number, getValue: () => Promise<CharacteristicValue>, service: Service,
-    chracteristic: WithUUID<new () => Characteristic>, targetStateCharacteristic?:WithUUID<new () => Characteristic>,
+    chracteristic: WithUUID<new () => Characteristic>, targetStateCharacteristic?: WithUUID<new () => Characteristic>,
     getTargetState?: () => CharacteristicValue) {
     if (pollSeconds > 0) {
-      //getValue.bind(this);
       setInterval(() => {
         if (this.online) {
-          // getValue.bind(this)().then((v) => {
           getValue().then((v) => {
             this.log.debug(`${this.name} polling...`);
             service.updateCharacteristic(chracteristic, v);
+          }).catch(() => {  // If we get an error, ignore
+            this.log.info(`Poll failure on ${this.name}`);
+            return;
           });
           // Update target if we have to
           if (targetStateCharacteristic && getTargetState) {
-            //service.updateCharacteristic(targetStateCharacteristic, getTargetState.bind(this)());
             service.updateCharacteristic(targetStateCharacteristic, getTargetState());
           }
         }
