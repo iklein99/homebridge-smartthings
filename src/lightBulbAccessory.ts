@@ -131,7 +131,7 @@ export class LightbulbPlatformAccessory extends BasePlatformAccessory {
       }
       this.refreshStatus().then((success) => {
         if (!success) {
-          this.online = false;
+          //this.online = false;
           this.log.error(`Could not get device status for ${this.name}`);
           return reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         }
@@ -186,7 +186,7 @@ export class LightbulbPlatformAccessory extends BasePlatformAccessory {
       }
       this.refreshStatus().then((success) => {
         if (!success) {
-          this.online = false;
+          //this.online = false;
           this.log.error(`Could not get device status for ${this.name}`);
           return reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         }
@@ -224,7 +224,7 @@ export class LightbulbPlatformAccessory extends BasePlatformAccessory {
     return new Promise((resolve, reject) => {
       this.refreshStatus().then((success) => {
         if (!success) {
-          this.online = false;
+          //this.online = false;
           this.log.error(`Could not get device status for ${this.name}`);
           return reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         }
@@ -262,7 +262,7 @@ export class LightbulbPlatformAccessory extends BasePlatformAccessory {
     return new Promise((resolve, reject) => {
       this.refreshStatus().then((success) => {
         if (!success) {
-          this.online = false;
+          //this.online = false;
           this.log.error(`Could not get device status for ${this.name}`);
           return reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         }

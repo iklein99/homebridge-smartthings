@@ -111,7 +111,7 @@ export class SwitchPlatformAccessory extends BasePlatformAccessory {
 
       this.refreshStatus().then((success) => {
         if (!success) {
-          this.online = false;
+          //this.online = false;
           reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         } else if (this.deviceStatus.status !== undefined && this.deviceStatus.status.switch.switch.value !== undefined) {
           const onStatus = this.deviceStatus.status.switch.switch.value;

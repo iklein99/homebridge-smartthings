@@ -151,7 +151,7 @@ export class GarageDoorPlatformAccessory extends BasePlatformAccessory {
 
         if (!success) {
           //return reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
-          this.online = false;
+          //this.online = false;
           throw new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
         }
 

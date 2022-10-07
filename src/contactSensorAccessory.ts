@@ -74,7 +74,7 @@ export class ContactSensorAccessory extends BasePlatformAccessory {
       //this.axInstance.get(this.statusURL)
         .then(success => {
           if (!success) {
-            this.online = false;
+            //this.online = false;
             return reject (new this.platform.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
           }
           const contactValue = this.deviceStatus.status.contactSensor.contact.value;

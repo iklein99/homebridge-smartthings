@@ -79,7 +79,7 @@ export class PresencePlatformAccessory extends BasePlatformAccessory {
       this.refreshStatus().then(success => {
 
         if (!success) {
-          this.online = false;
+          //this.online = false;
           return reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         }
 

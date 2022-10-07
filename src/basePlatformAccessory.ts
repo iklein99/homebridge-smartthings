@@ -34,6 +34,8 @@ export abstract class BasePlatformAccessory {
   protected api: API;
   protected online = true;
   protected deviceStatus: DeviceStatus = { timestamp: 0, status: undefined };
+  protected failureCount = 0;
+  protected giveUpTime = 0;
 
   constructor(
     platform: IKHomeBridgeHomebridgePlatform,
@@ -76,18 +78,25 @@ export abstract class BasePlatformAccessory {
   }
 
   // Called by subclasses to refresh the status for the device.  Will only refresh if it has been more than
-  // 5 seconds since last refresh
+  // 4 seconds since last refresh
   //
   protected async refreshStatus(): Promise<boolean> {
-    if (Date.now() - this.deviceStatus.timestamp > 3000) {
+    if (Date.now() - this.deviceStatus.timestamp > 4000) {
       try {
         const res = await this.axInstance.get(this.statusURL);
+        this.failureCount = 0;
         if (res.data.components.main !== undefined) {
           this.deviceStatus.status = res.data.components.main;
           this.deviceStatus.timestamp = Date.now();
         }
       } catch (error) {
-        this.log.error(`Failed to request status from ${this.name}: ${error}`);
+        this.failureCount++;
+        this.log.error(`Failed to request status from ${this.name}: ${error}.  This is failure number ${this.failureCount}`);
+        if (this.failureCount >= 5) {
+          this.log.error(`Exceeded allowed failures for ${this.name}.  Device is offline`);
+          this.giveUpTime = Date.now();
+          this.online = false;
+        }
         return false;
       }
     }
@@ -110,6 +119,18 @@ export abstract class BasePlatformAccessory {
           // Update target if we have to
           if (targetStateCharacteristic && getTargetState) {
             service.updateCharacteristic(targetStateCharacteristic, getTargetState());
+          }
+        } else {
+          // If we failed this accessory due to errors. Reset the failure count and online status after 10 minutes.
+          if (this.giveUpTime > 0 && (Date.now() - this.giveUpTime > (10 * 60 * 1000))) {
+            this.axInstance.get(this.healthURL)
+              .then(res => {
+                if (res.data.state === 'ONLINE') {
+                  this.online = true;
+                  this.giveUpTime = 0;
+                  this.failureCount = 0;
+                }
+              });
           }
         }
       }, pollSeconds * 1000);
