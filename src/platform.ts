@@ -11,6 +11,7 @@ import { LockPlatformAccessory } from './lockAccessory';
 import { WindowShadeLevelPlatformAccessory } from './windowShadeLevelAccessory';
 import { SensorAccessory } from './sensorAccessory';
 import { PresencePlatformAccessory } from './presenceAccessory';
+import { ContactSensorAccessory } from './contactSensorAccessory';
 
 /**
  * HomebridgePlatform
@@ -32,6 +33,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
   private lockCat = 'SmartLock';
   private windowShadeLevelCat = 'Blind';
   private sensorCat = 'MotionSensor';
+  private contactSensorCat = 'ContactSensor';
 
   private presenceSensorCapability = 'presenceSensor';
 
@@ -44,6 +46,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
     this.lockCat,
     this.windowShadeLevelCat,
     this.sensorCat,
+    this.contactSensorCat,
   ];
 
   private supportedCapabilities = [
@@ -283,6 +286,10 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
       case this.sensorCat: {
         return new SensorAccessory(this, accessory);
       }
+      case this.contactSensorCat: {
+        return new ContactSensorAccessory(this, accessory);
+      }
+
       default: {
         if (capabilities.find((c) => c.id === this.presenceSensorCapability)) {
           return new PresencePlatformAccessory(this, accessory);
