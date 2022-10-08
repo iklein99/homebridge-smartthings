@@ -137,7 +137,7 @@ export abstract class BasePlatformAccessory {
     }
   }
 
-  async sendCommand(capability: string, command: string, args?: unknown[]): Promise<void> {
+  async sendCommand(capability: string, command: string, args?: unknown[]): Promise<boolean> {
 
     let cmd: unknown;
 
@@ -155,13 +155,14 @@ export abstract class BasePlatformAccessory {
     }
 
     const commandBody = JSON.stringify([cmd]);
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       this.axInstance.post(this.commandURL, commandBody).then(() => {
         this.log.debug(`${command} successful for ${this.name}`);
-        resolve();
+        this.deviceStatus.timestamp = 0; // Force a refresh on next poll after a state change
+        resolve(true);
       }).catch((error) => {
         this.log.error(`${command} failed for ${this.name}: ${error}`);
-        reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+        resolve(false);
       });
     });
   }

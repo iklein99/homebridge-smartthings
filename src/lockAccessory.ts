@@ -91,18 +91,12 @@ export class LockPlatformAccessory extends BasePlatformAccessory {
     }
     this.lockInTransition = true;
     this.service.updateCharacteristic(this.platform.Characteristic.LockTargetState, value);
-    this.axInstance.post(this.commandURL, JSON.stringify([{
-      capability: 'lock',
-      command: value ? 'lock' : 'unlock',
-    }])).then(() => {
-      this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
-      // this.pollTry = 0;
-      // this.log.debug('Polling lock status...');
-      // this.timer = setInterval(this.pollLockState = this.pollLockState.bind(this), 1000, value);
-    }).catch(reason => {
-      this.lockInTransition = false;
-      this.log.error('onSet(' + value + ') FAILED for ' + this.name + ': reason ' + reason);
-      throw (new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+    this.sendCommand('lock', value ? 'lock' : 'unlock').then((success) => {
+      if (success) {
+        this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
+      } else {
+        this.log.error(`Command failed for ${this.name}`);
+      }
     });
   }
 

@@ -12,6 +12,9 @@ This is yet another smartthings plugin for Homebridge.  This requires no access 
 require a lot of work to install.  It will discover devices automatically as well as unregister devices that are removed
 from your smarttthings network.  This is currently under development.
 
+## Fixed in version 1.4.4
+Delay in updating state right after a command was sent.
+
 ## New in version 1.4.3
 Added contect sensor support.  Also will stop polling after 5 failures in a row, but restore after 10 minutes to try and reconnect
 to a failed accessory.

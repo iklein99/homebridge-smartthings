@@ -65,14 +65,12 @@ export class SwitchPlatformAccessory extends BasePlatformAccessory {
       throw new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
 
-    this.axInstance.post(this.commandURL, JSON.stringify([{
-      capability: 'switch',
-      command: value ? 'on' : 'off',
-    }])).then(() => {
-      this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
-    }).catch(reason => {
-      this.log.error('onSet(' + value + ') FAILED for ' + this.name + ': reason ' + reason);
-      throw (new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+    this.sendCommand('switch', value ? 'on' : 'off').then((success) => {
+      if (success) {
+        this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
+      } else {
+        this.log.error(`Failure to send command to ${this.name}`);
+      }
     });
   }
 
@@ -101,13 +99,6 @@ export class SwitchPlatformAccessory extends BasePlatformAccessory {
         this.log.error(this.name + ' is offline');
         return reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       }
-
-      // this.axInstance.get(this.statusURL).then(res => {
-
-      //   if (res.data.components.main.switch.switch.value !== undefined) {
-      //     this.log.debug('onGet() SUCCESSFUL for ' + this.name + '. value = ' + res.data.components.main.switch.switch.value);
-      //     onStatus = (res.data.components.main.switch.switch.value === 'on' ? 1 : 0);
-      //     resolve(onStatus);
 
       this.refreshStatus().then((success) => {
         if (!success) {
