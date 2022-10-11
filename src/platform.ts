@@ -10,6 +10,8 @@ import { GarageDoorPlatformAccessory } from './garageDoorAccessory';
 import { LockPlatformAccessory } from './lockAccessory';
 import { WindowShadeLevelPlatformAccessory } from './windowShadeLevelAccessory';
 import { SensorAccessory } from './sensorAccessory';
+import { PresencePlatformAccessory } from './presenceAccessory';
+import { ContactSensorAccessory } from './contactSensorAccessory';
 
 /**
  * HomebridgePlatform
@@ -31,6 +33,9 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
   private lockCat = 'SmartLock';
   private windowShadeLevelCat = 'Blind';
   private sensorCat = 'MotionSensor';
+  private contactSensorCat = 'ContactSensor';
+
+  private presenceSensorCapability = 'presenceSensor';
 
   private categories = [
     this.switchCat,
@@ -41,6 +46,11 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
     this.lockCat,
     this.windowShadeLevelCat,
     this.sensorCat,
+    this.contactSensorCat,
+  ];
+
+  private supportedCapabilities = [
+    this.presenceSensorCapability,
   ];
 
   private locationIDsToIgnore: string[] = [];
@@ -190,7 +200,8 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
 
       this.log.debug('DEVICE DATA: ' + JSON.stringify(device));
 
-      if (device.components[0].categories.find(cat => this.categories.find(a => a === cat.name))) {
+      if (device.components[0].categories.find(cat => this.categories.find(a => a === cat.name)) ||
+        this.findSupportedCapability(device)) {
         const existingAccessory = this.accessories.find(accessory => accessory.UUID === device.deviceId);
 
         if (existingAccessory) {
@@ -232,8 +243,13 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
     });
   }
 
+  findSupportedCapability(device): boolean {
+    return (device.components[0].capabilities.find((ca) => this.supportedCapabilities.find((cb => ca.id === cb))));
+  }
+
   createAccessoryObject(device, accessory): BasePlatformAccessory {
     const category = this.categories.find(c => device.components[0].categories.find(cat => cat.name === c));
+    const capabilities = device.components[0].capabilities;
 
     // For a window shade, not sure if the category is reliable, but we look for the capability.
 
@@ -270,8 +286,16 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
       case this.sensorCat: {
         return new SensorAccessory(this, accessory);
       }
+      case this.contactSensorCat: {
+        return new ContactSensorAccessory(this, accessory);
+      }
+
       default: {
-        throw `Unexpected device category: ${category}`;
+        if (capabilities.find((c) => c.id === this.presenceSensorCapability)) {
+          return new PresencePlatformAccessory(this, accessory);
+        } else {
+          throw `Unexpected device category: ${category}`;
+        }
       }
     }
   }

@@ -7,7 +7,7 @@ import { IKHomeBridgeHomebridgePlatform } from './platform';
  * An instance of this class is created for each accessory your platform registers
  * Each accessory may expose multiple services of different service types.
  */
-export class SwitchPlatformAccessory extends BasePlatformAccessory {
+export class PresencePlatformAccessory extends BasePlatformAccessory {
   private service: Service;
 
   // private log: Logger;
@@ -26,7 +26,7 @@ export class SwitchPlatformAccessory extends BasePlatformAccessory {
 
     // this.log = platform.log;
 
-    this.service = accessory.getService(platform.Service.Switch) || accessory.addService(platform.Service.Switch);
+    this.service = accessory.getService(platform.Service.OccupancySensor) || accessory.addService(platform.Service.OccupancySensor);
 
     // set the service name, this is what is displayed as the default name on the Home app
     // in this example we are using the name we stored in the `accessory.context` in the `discoverDevices` method.
@@ -36,42 +36,18 @@ export class SwitchPlatformAccessory extends BasePlatformAccessory {
     // see https://developers.homebridge.io/#/service/Lightbulb
 
     // register handlers for the On/Off Characteristic
-    this.service.getCharacteristic(platform.Characteristic.On)
-      .onSet(this.setOn.bind(this))                // SET - bind to the `setOn` method below
+    this.service.getCharacteristic(platform.Characteristic.OccupancyDetected)
+      //.onSet(this.setOn.bind(this))                // SET - bind to the `setOn` method below
       .onGet(this.getOn.bind(this));               // GET - bind to the `getOn` method below
 
-    let pollSeconds = 10;
-    if (platform.config.PollSwitchesAndLights !== undefined) {
-      pollSeconds = platform.config.PollSwitchesAndLights;
+    let pollSeconds = 10; // default to 10 seconds
+    if (this.platform.config.PollSensorsSeconds !== undefined) {
+      pollSeconds = this.platform.config.PollSensorsSeconds;
     }
 
     if (pollSeconds > 0) {
-      this.startPollingState(pollSeconds, this.getOn.bind(this), this.service, platform.Characteristic.On);
+      this.startPollingState(pollSeconds, this.getOn.bind(this), this.service, this.characteristic.OccupancyDetected);
     }
-
-  }
-
-
-  /**
-   * Handle "SET" requests from HomeKit
-   * These are sent when the user changes the state of an accessory, for example, turning on a Light bulb.
-   */
-  async setOn(value: CharacteristicValue) {
-
-    this.log.debug('Received onSet(' + value + ') event for ' + this.name);
-
-    if (!this.online) {
-      this.log.error(this.name + ' is offline');
-      throw new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    }
-
-    this.sendCommand('switch', value ? 'on' : 'off').then((success) => {
-      if (success) {
-        this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
-      } else {
-        this.log.error(`Failure to send command to ${this.name}`);
-      }
-    });
   }
 
   /**
@@ -92,7 +68,7 @@ export class SwitchPlatformAccessory extends BasePlatformAccessory {
     // throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     this.log.debug('Received onGet() event for ' + this.name);
 
-    //let onStatus = 0;
+    let onStatus = 0;
     return new Promise<CharacteristicValue>((resolve, reject) => {
 
       if (!this.online) {
@@ -100,16 +76,20 @@ export class SwitchPlatformAccessory extends BasePlatformAccessory {
         return reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       }
 
-      this.refreshStatus().then((success) => {
+      this.refreshStatus().then(success => {
+
         if (!success) {
           //this.online = false;
-          reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
-        } else if (this.deviceStatus.status !== undefined && this.deviceStatus.status.switch.switch.value !== undefined) {
-          const onStatus = this.deviceStatus.status.switch.switch.value;
-          this.log.debug('onGet() SUCCESSFUL for ' + this.name + '. value = ' + onStatus);
-          resolve(onStatus === 'on' ? 1 : 0);
+          return reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+        }
+
+        if (this.deviceStatus.status.presenceSensor.presence.value !== undefined) {
+          const status = this.deviceStatus.status.presenceSensor.presence.value;
+          this.log.debug('onGet() SUCCESSFUL for ' + this.name + '. value = ' + status);
+          onStatus = (status === 'present' ? 1 : 0);
+          resolve(onStatus);
         } else {
-          this.log.error('onGet() FAILED for ' + this.name + '. Unknown status.');
+          this.log.error('onGet() FAILED for ' + this.name + '. Undefined value');
           reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         }
       });

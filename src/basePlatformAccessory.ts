@@ -1,7 +1,12 @@
-import { PlatformAccessory, Logger, API } from 'homebridge';
+import { PlatformAccessory, Logger, API, Characteristic, CharacteristicValue, Service, WithUUID } from 'homebridge';
 import axios = require('axios');
 import { IKHomeBridgeHomebridgePlatform } from './platform';
 
+type DeviceStatus = {
+  timestamp: number;
+  //status: Record<string, unknown>;
+  status: any;
+};
 /**
  * Platform Accessory
  * An instance of this class is created for each accessory your platform registers
@@ -27,28 +32,10 @@ export abstract class BasePlatformAccessory {
   protected statusURL: string;
   protected healthURL: string;
   protected api: API;
-  private _online = true;
-
-  // Getters
-  get accessory() {
-    return this._accessory;
-  }
-
-  get platform() {
-    return this._platform;
-  }
-
-  get log() {
-    return this._log;
-  }
-
-  get name() {
-    return this._name;
-  }
-
-  get online() {
-    return this._online;
-  }
+  protected online = true;
+  protected deviceStatus: DeviceStatus = { timestamp: 0, status: undefined };
+  protected failureCount = 0;
+  protected giveUpTime = 0;
 
   constructor(
     platform: IKHomeBridgeHomebridgePlatform,
@@ -90,7 +77,127 @@ export abstract class BasePlatformAccessory {
       });
   }
 
-  async sendCommand(capability: string, command: string, args?: unknown[]): Promise<void> {
+  // Called by subclasses to refresh the status for the device.  Will only refresh if it has been more than
+  // 4 seconds since last refresh
+  //
+  protected async refreshStatus(): Promise<boolean> {
+    if (Date.now() - this.deviceStatus.timestamp > 4000) {
+      try {
+        const res = await this.axInstance.get(this.statusURL);
+        this.failureCount = 0;
+        if (res.data.components.main !== undefined) {
+          this.deviceStatus.status = res.data.components.main;
+          this.deviceStatus.timestamp = Date.now();
+        }
+      } catch (error) {
+        this.failureCount++;
+        this.log.error(`Failed to request status from ${this.name}: ${error}.  This is failure number ${this.failureCount}`);
+        if (this.failureCount >= 5) {
+          this.log.error(`Exceeded allowed failures for ${this.name}.  Device is offline`);
+          this.giveUpTime = Date.now();
+          this.online = false;
+        }
+        return false;
+      }
+    }
+    return true;
+  }
+
+  protected startPollingState(pollSeconds: number, getValue: () => Promise<CharacteristicValue>, service: Service,
+    chracteristic: WithUUID<new () => Characteristic>, targetStateCharacteristic?: WithUUID<new () => Characteristic>,
+    getTargetState?: () => CharacteristicValue) {
+    if (pollSeconds > 0) {
+      setInterval(() => {
+        if (this.online) {
+          getValue().then((v) => {
+            this.log.debug(`${this.name} polling...`);
+            service.updateCharacteristic(chracteristic, v);
+          }).catch(() => {  // If we get an error, ignore
+            this.log.info(`Poll failure on ${this.name}`);
+            return;
+          });
+          // Update target if we have to
+          if (targetStateCharacteristic && getTargetState) {
+            service.updateCharacteristic(targetStateCharacteristic, getTargetState());
+          }
+        } else {
+          // If we failed this accessory due to errors. Reset the failure count and online status after 10 minutes.
+          if (this.giveUpTime > 0 && (Date.now() - this.giveUpTime > (10 * 60 * 1000))) {
+            this.axInstance.get(this.healthURL)
+              .then(res => {
+                if (res.data.state === 'ONLINE') {
+                  this.online = true;
+                  this.giveUpTime = 0;
+                  this.failureCount = 0;
+                }
+              });
+          }
+        }
+      }, pollSeconds * 1000);
+    }
+  }
+
+  // Called by subclasses to refresh the status for the device.  Will only refresh if it has been more than
+  // 4 seconds since last refresh
+  //
+  protected async refreshStatus(): Promise<boolean> {
+    if (Date.now() - this.deviceStatus.timestamp > 4000) {
+      try {
+        const res = await this.axInstance.get(this.statusURL);
+        this.failureCount = 0;
+        if (res.data.components.main !== undefined) {
+          this.deviceStatus.status = res.data.components.main;
+          this.deviceStatus.timestamp = Date.now();
+        }
+      } catch (error) {
+        this.failureCount++;
+        this.log.error(`Failed to request status from ${this.name}: ${error}.  This is failure number ${this.failureCount}`);
+        if (this.failureCount >= 5) {
+          this.log.error(`Exceeded allowed failures for ${this.name}.  Device is offline`);
+          this.giveUpTime = Date.now();
+          this.online = false;
+        }
+        return false;
+      }
+    }
+    return true;
+  }
+
+  protected startPollingState(pollSeconds: number, getValue: () => Promise<CharacteristicValue>, service: Service,
+    chracteristic: WithUUID<new () => Characteristic>, targetStateCharacteristic?: WithUUID<new () => Characteristic>,
+    getTargetState?: () => CharacteristicValue) {
+    if (pollSeconds > 0) {
+      setInterval(() => {
+        if (this.online) {
+          getValue().then((v) => {
+            this.log.debug(`${this.name} polling...`);
+            service.updateCharacteristic(chracteristic, v);
+          }).catch(() => {  // If we get an error, ignore
+            this.log.info(`Poll failure on ${this.name}`);
+            return;
+          });
+          // Update target if we have to
+          if (targetStateCharacteristic && getTargetState) {
+            service.updateCharacteristic(targetStateCharacteristic, getTargetState());
+          }
+        } else {
+          // If we failed this accessory due to errors. Reset the failure count and online status after 10 minutes.
+          if (this.giveUpTime > 0 && (Date.now() - this.giveUpTime > (10 * 60 * 1000))) {
+            this.axInstance.get(this.healthURL)
+              .then(res => {
+                if (res.data.state === 'ONLINE') {
+                  this.online = true;
+                  this.giveUpTime = 0;
+                  this.failureCount = 0;
+                }
+              });
+          }
+        }
+      }, pollSeconds * 1000);
+    }
+  }
+
+  async sendCommand(capability: string, command: string, args?: unknown[]): Promise<boolean> {
 
     let cmd: unknown;
 
@@ -108,13 +215,14 @@ export abstract class BasePlatformAccessory {
     }
 
     const commandBody = JSON.stringify([cmd]);
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       this.axInstance.post(this.commandURL, commandBody).then(() => {
-        this._log.debug(`${command} successful for ${this.name}`);
-        resolve();
+        this.log.debug(`${command} successful for ${this.name}`);
+        this.deviceStatus.timestamp = 0; // Force a refresh on next poll after a state change
+        resolve(true);
       }).catch((error) => {
-        this._log.error(`${command} failed for ${this.name}: ${error}`);
-        reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+        this.log.error(`${command} failed for ${this.name}: ${error}`);
+        resolve(false);
       });
     });
   }

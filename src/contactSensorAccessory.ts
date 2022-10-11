@@ -8,7 +8,7 @@ import { IKHomeBridgeHomebridgePlatform } from './platform';
  * An instance of this class is created for each accessory your platform registers
  * Each accessory may expose multiple services of different service types.
  */
-export class SensorAccessory extends BasePlatformAccessory {
+export class ContactSensorAccessory extends BasePlatformAccessory {
   //private service: Service;
   private service: Service;
 
@@ -27,26 +27,22 @@ export class SensorAccessory extends BasePlatformAccessory {
     super(platform, accessory);
     //this.requestStatus.bind(this);
 
-    this.service = this.accessory.getService(platform.Service.MotionSensor) || this.accessory.addService(platform.Service.MotionSensor);
+    this.service = this.accessory.getService(platform.Service.ContactSensor) || this.accessory.addService(platform.Service.ContactSensor);
     this.service.setCharacteristic(platform.Characteristic.Name, accessory.context.device.label);
-    this.service.getCharacteristic(platform.Characteristic.MotionDetected)
-      .onGet(this.getMotion.bind(this));               // GET - bind to the `getOn` method below
-    // this.pushService(platform.Service.MotionSensor, platform.Characteristic.MotionDetected, this.getMotion);
-    //this.pushService(platform.Service.TemperatureSensor, platform.Characteristic.CurrentTemperature, this.getTemperature);
-
-    // this.log = platform.log;
+    this.service.getCharacteristic(platform.Characteristic.ContactSensorState)
+      .onGet(this.getContact.bind(this));               // GET - bind to the `getOn` method below
 
     /**
      * Updating characteristics values asynchronously.
      */
 
-    let pollSensorSeconds = 5; // default to 10 seconds
+    let pollSensorSeconds = 5; // default to 5 seconds
     if (this.platform.config.PollSensorsSeconds !== undefined) {
       pollSensorSeconds = this.platform.config.PollSensorsSeconds;
     }
 
     if (pollSensorSeconds > 0) {
-      this.startPollingState(pollSensorSeconds, this.getMotion.bind(this), this.service, this.characteristic.MotionDetected);
+      this.startPollingState(pollSensorSeconds, this.getContact.bind(this), this.service, this.characteristic.ContactSensorState);
     }
   }
 
@@ -63,11 +59,11 @@ export class SensorAccessory extends BasePlatformAccessory {
    * @example
    * this.service.updateCharacteristic(this.platform.Characteristic.On, true)
    */
-  async getMotion(): Promise<CharacteristicValue> {
+  async getContact(): Promise<CharacteristicValue> {
 
     // if you need to return an error to show the device as "Not Responding" in the Home app:
     // throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    this.log.debug('Received getMotion() event for ' + this.name);
+    this.log.debug('Received getContact() event for ' + this.name);
 
     return new Promise((resolve, reject) => {
       if (!this.online) {
@@ -81,9 +77,11 @@ export class SensorAccessory extends BasePlatformAccessory {
             //this.online = false;
             return reject (new this.platform.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
           }
-          const motionValue = this.deviceStatus.status.motionSensor.motion.value;
-          this.log.debug(`Motion value from ${this.name}: ${motionValue}`);
-          resolve(motionValue === 'active' ? true : false);
+          const contactValue = this.deviceStatus.status.contactSensor.contact.value;
+          this.log.debug(`Motion value from ${this.name}: ${contactValue}`);
+          resolve(contactValue === 'open' ?
+            this.platform.Characteristic.ContactSensorState.CONTACT_NOT_DETECTED :
+            this.platform.Characteristic.ContactSensorState.CONTACT_DETECTED);
         });
     });
   }

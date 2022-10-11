@@ -47,6 +47,12 @@
         "required": false,
         "default": 5
       },
+      "PollSwitchesAndLightsSeconds": {
+        "title": "Poll Switches and Lights (zero = don't poll)",
+        "type": "integer",
+        "required": false,
+        "default": 10
+      },
       "IgnoreLocations": {
         "title": "Locations to Ignore",
         "type": "array",
