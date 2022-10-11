@@ -1,12 +1,13 @@
-import { STAccessory } from '../stAccessory';
+import { BasePlatformAccessory } from '../basePlatformAccessory';
 import { Logger } from 'homebridge';
 
 // Comment
 export class BaseService {
   protected log: Logger;
-  protected accessory: STAccessory;
+  protected accessory: BasePlatformAccessory;
+  static test: number;
 
-  constructor(accessory: STAccessory) {
+  constructor(accessory: BasePlatformAccessory) {
     this.accessory = accessory;
     this.log = accessory.log;
   }
