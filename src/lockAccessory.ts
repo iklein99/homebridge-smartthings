@@ -12,7 +12,7 @@ export class LockPlatformAccessory extends BasePlatformAccessory {
   private targetState = this.platform.Characteristic.LockTargetState.UNSECURED;
   //private timer;
   //private pollTry = 0;
-  private lockInTransition = false;
+  private lockInTransitionStart = 0;
 
   // private log: Logger;
 
@@ -89,7 +89,7 @@ export class LockPlatformAccessory extends BasePlatformAccessory {
       this.log.error(this.name + ' is offline');
       throw new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
-    this.lockInTransition = true;
+    this.lockInTransitionStart = Date.now();
     this.service.updateCharacteristic(this.platform.Characteristic.LockTargetState, value);
     this.sendCommand('lock', value ? 'lock' : 'unlock').then((success) => {
       if (success) {
@@ -101,6 +101,15 @@ export class LockPlatformAccessory extends BasePlatformAccessory {
   }
 
   getTargetState(): number {
+    // If it has been more than 10 seconds since we've sent a transition command,
+    // reset the target state to the current state.
+
+    if (Date.now() - this.lockInTransitionStart > 10000) {
+      this.targetState = this.deviceStatus.status.lock.lock.value === 'locked' ?
+        this.characteristic.LockTargetState.SECURED:
+        this.characteristic.LockTargetState.UNSECURED;
+      this.log.debug(`Reset ${this.name} to ${this.targetState}`);
+    }
     return this.targetState;
   }
 

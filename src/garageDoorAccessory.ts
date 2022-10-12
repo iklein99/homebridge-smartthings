@@ -11,13 +11,7 @@ import { IKHomeBridgeHomebridgePlatform } from './platform';
 export class GarageDoorPlatformAccessory extends BasePlatformAccessory {
   private service: Service;
   private targetDoorState;
-  // private intervalId;
-  // private getStatusTryCount = 0;
-  private doorInTransition = false;
-  // private  MAX_POLLING_COUNT = 30;  // 30 seconds
-  // private platform: IKHomeBridgeHomebridgePlatform;
-
-  // private log: Logger;
+  private doorInTransitionStart = 0;
 
   /**
    * These are just used to create a working example
@@ -85,6 +79,11 @@ export class GarageDoorPlatformAccessory extends BasePlatformAccessory {
   // Should handle the getting of the current door state
   //
   getTargetDoorState() {
+    if (Date.now() - this.doorInTransitionStart > 20000) {
+      this.targetDoorState = this.deviceStatus.status.doorControl.door.value === 'closed' ?
+        this.characteristic.TargetDoorState.CLOSED:
+        this.characteristic.TargetDoorState.OPEN;
+    }
     return this.targetDoorState;
   }
 
@@ -102,7 +101,7 @@ export class GarageDoorPlatformAccessory extends BasePlatformAccessory {
         reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       } else {
         this.targetDoorState = value;
-        this.doorInTransition = true;
+        this.doorInTransitionStart = Date.now();
         this.axInstance.post(this.commandURL, JSON.stringify([{
           capability: 'doorControl',
           command: value ? 'close' : 'open',
@@ -114,7 +113,6 @@ export class GarageDoorPlatformAccessory extends BasePlatformAccessory {
         }).catch(reason => {
           this.log.error('setDoorState(' + value + ') FAILED for ' + this.name + ': reason ' + reason);
           reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
-          this.doorInTransition = false;
         });
       }
     });
