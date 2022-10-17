@@ -9,9 +9,11 @@ import { FanPlatformAccessory } from './fanAccessory';
 import { GarageDoorPlatformAccessory } from './garageDoorAccessory';
 import { LockPlatformAccessory } from './lockAccessory';
 import { WindowShadeLevelPlatformAccessory } from './windowShadeLevelAccessory';
-import { SensorAccessory } from './sensorAccessory';
+//import { SensorAccessory } from './sensorAccessory';
 import { PresencePlatformAccessory } from './presenceAccessory';
 import { ContactSensorAccessory } from './contactSensorAccessory';
+import { MultiServiceAccessory } from './multiServiceAccessory';
+import { capabilityToServices } from './capabilityMap';
 
 /**
  * HomebridgePlatform
@@ -32,10 +34,10 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
   private garageDoorCat = 'GarageDoor';
   private lockCat = 'SmartLock';
   private windowShadeLevelCat = 'Blind';
-  private sensorCat = 'MotionSensor';
+  //private sensorCat = 'MotionSensor';
   private contactSensorCat = 'ContactSensor';
 
-  private presenceSensorCapability = 'presenceSensor';
+  //private presenceSensorCapability = 'presenceSensor';
 
   private categories = [
     this.switchCat,
@@ -45,13 +47,13 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
     this.garageDoorCat,
     this.lockCat,
     this.windowShadeLevelCat,
-    this.sensorCat,
+    //this.sensorCat,
     this.contactSensorCat,
   ];
 
-  private supportedCapabilities = [
-    this.presenceSensorCapability,
-  ];
+  // private supportedCapabilities = [
+  //   this.presenceSensorCapability,
+  // ];
 
   private locationIDsToIgnore: string[] = [];
   private roomsIDsToIgnore: string[] = [];
@@ -244,7 +246,8 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
   }
 
   findSupportedCapability(device): boolean {
-    return (device.components[0].capabilities.find((ca) => this.supportedCapabilities.find((cb => ca.id === cb))));
+    // return (device.components[0].capabilities.find((ca) => this.supportedCapabilities.find((cb => ca.id === cb))));
+    return (device.components[0].capabilities.find((ca) => Object.keys(capabilityToServices).find((cb => ca.id === cb))));
   }
 
   createAccessoryObject(device, accessory): BasePlatformAccessory {
@@ -283,18 +286,19 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
       case this.windowShadeLevelCat: {
         return new WindowShadeLevelPlatformAccessory(this, accessory);
       }
-      case this.sensorCat: {
-        return new SensorAccessory(this, accessory);
-      }
+      // case this.sensorCat: {
+      //   return new SensorAccessory(this, accessory);
+      // }
       case this.contactSensorCat: {
         return new ContactSensorAccessory(this, accessory);
       }
 
       default: {
-        if (capabilities.find((c) => c.id === this.presenceSensorCapability)) {
+        if (capabilities.find((c) => c.id === 'presenceSensor')) {
           return new PresencePlatformAccessory(this, accessory);
         } else {
-          throw `Unexpected device category: ${category}`;
+          return new MultiServiceAccessory(this, accessory, capabilities);
+          //throw `Unexpected device category: ${category}`;
         }
       }
     }

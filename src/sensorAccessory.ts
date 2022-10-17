@@ -1,5 +1,5 @@
 
-import { Service, PlatformAccessory, CharacteristicValue} from 'homebridge';
+import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
 import { BasePlatformAccessory } from './basePlatformAccessory';
 import { IKHomeBridgeHomebridgePlatform } from './platform';
 
@@ -75,11 +75,11 @@ export class SensorAccessory extends BasePlatformAccessory {
         throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
       }
       this.refreshStatus()
-      //this.axInstance.get(this.statusURL)
+        //this.axInstance.get(this.statusURL)
         .then(success => {
           if (!success) {
             //this.online = false;
-            return reject (new this.platform.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+            return reject(new this.platform.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
           }
           const motionValue = this.deviceStatus.status.motionSensor.motion.value;
           this.log.debug(`Motion value from ${this.name}: ${motionValue}`);
