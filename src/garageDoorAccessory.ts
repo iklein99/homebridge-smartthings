@@ -58,7 +58,7 @@ export class GarageDoorPlatformAccessory extends BasePlatformAccessory {
       } else {
         this.targetDoorState = platform.Characteristic.TargetDoorState.CLOSED;
       }
-    }).catch(()=> {
+    }).catch(() => {
       this.targetDoorState = platform.Characteristic.TargetDoorState.CLOSED;
     });
 
@@ -80,9 +80,14 @@ export class GarageDoorPlatformAccessory extends BasePlatformAccessory {
   //
   getTargetDoorState() {
     if (Date.now() - this.doorInTransitionStart > 20000) {
-      this.targetDoorState = this.deviceStatus.status.doorControl.door.value === 'closed' ?
-        this.characteristic.TargetDoorState.CLOSED:
-        this.characteristic.TargetDoorState.OPEN;
+      this.refreshStatus().then(success => {
+        if (!success) {
+          throw new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+        }
+        this.targetDoorState = this.deviceStatus.status.doorControl.door.value === 'closed' ?
+          this.characteristic.TargetDoorState.CLOSED :
+          this.characteristic.TargetDoorState.OPEN;
+      });
     }
     return this.targetDoorState;
   }

@@ -105,10 +105,15 @@ export class LockPlatformAccessory extends BasePlatformAccessory {
     // reset the target state to the current state.
 
     if (Date.now() - this.lockInTransitionStart > 10000) {
-      this.targetState = this.deviceStatus.status.lock.lock.value === 'locked' ?
-        this.characteristic.LockTargetState.SECURED:
-        this.characteristic.LockTargetState.UNSECURED;
-      this.log.debug(`Reset ${this.name} to ${this.targetState}`);
+      this.refreshStatus().then(success => {
+        if (!success) {
+          throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+        }
+        this.targetState = this.deviceStatus.status.lock.lock.value === 'locked' ?
+          this.characteristic.LockTargetState.SECURED:
+          this.characteristic.LockTargetState.UNSECURED;
+        this.log.debug(`Reset ${this.name} to ${this.targetState}`);
+      });
     }
     return this.targetState;
   }
