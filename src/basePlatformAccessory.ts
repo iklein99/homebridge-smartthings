@@ -88,6 +88,7 @@ export abstract class BasePlatformAccessory {
         if (res.data.components.main !== undefined) {
           this.deviceStatus.status = res.data.components.main;
           this.deviceStatus.timestamp = Date.now();
+          this.log.debug(`Updates status for ${this.name}: ${JSON.stringify(this.deviceStatus.status)}`);
         }
       } catch (error) {
         this.failureCount++;

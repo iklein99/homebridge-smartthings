@@ -13,7 +13,6 @@ import { WindowShadeLevelPlatformAccessory } from './windowShadeLevelAccessory';
 import { PresencePlatformAccessory } from './presenceAccessory';
 import { ContactSensorAccessory } from './contactSensorAccessory';
 import { MultiServiceAccessory } from './multiServiceAccessory';
-import { capabilityToServices } from './capabilityMap';
 
 /**
  * HomebridgePlatform
@@ -247,7 +246,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
 
   findSupportedCapability(device): boolean {
     // return (device.components[0].capabilities.find((ca) => this.supportedCapabilities.find((cb => ca.id === cb))));
-    return (device.components[0].capabilities.find((ca) => Object.keys(capabilityToServices).find((cb => ca.id === cb))));
+    return (device.components[0].capabilities.find((ca) => MultiServiceAccessory.capabilitySupported(ca.id)));
   }
 
   createAccessoryObject(device, accessory): BasePlatformAccessory {

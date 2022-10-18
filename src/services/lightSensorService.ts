@@ -3,19 +3,19 @@ import { IKHomeBridgeHomebridgePlatform } from '../platform';
 import { BaseService } from './baseService';
 import { MultiServiceAccessory } from '../multiServiceAccessory';
 
-export class MotionService extends BaseService {
+export class LightSensorService extends BaseService {
 
   constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, multiServiceAccessory: MultiServiceAccessory,
     name: string, deviceStatus) {
-    super(platform, accessory, multiServiceAccessory, name, deviceStatus, platform.Service.MotionSensor);
+    super(platform, accessory, multiServiceAccessory, name, deviceStatus, platform.Service.LightSensor);
 
-    this.log.debug(`Adding MotionService to ${this.name}`);
+    this.log.debug(`Adding LightSensorService to ${this.name}`);
     // this.service = this.accessory.getService(platform.Service.MotionSensor) ||
     //   this.accessory.addService(platform.Service.MotionSensor);
 
     // this.service.setCharacteristic(platform.Characteristic.Name, accessory.context.device.label);
-    this.service.getCharacteristic(platform.Characteristic.MotionDetected)
-      .onGet(this.getMotion.bind(this));
+    this.service.getCharacteristic(platform.Characteristic.CurrentAmbientLightLevel)
+      .onGet(this.getLightLevel.bind(this));
 
     let pollSensorSeconds = 5; // default to 10 seconds
     if (this.platform.config.PollSensorsSeconds !== undefined) {
@@ -23,7 +23,7 @@ export class MotionService extends BaseService {
     }
 
     if (pollSensorSeconds > 0) {
-      multiServiceAccessory.startPollingState(pollSensorSeconds, this.getMotion.bind(this), this.service,
+      multiServiceAccessory.startPollingState(pollSensorSeconds, this.getLightLevel.bind(this), this.service,
         platform.Characteristic.MotionDetected);
     }
   }
@@ -49,7 +49,7 @@ export class MotionService extends BaseService {
   //   return this.service;
   // }
 
-  async getMotion(): Promise<CharacteristicValue> {
+  async getLightLevel(): Promise<CharacteristicValue> {
     // if you need to return an error to show the device as "Not Responding" in the Home app:
     // throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     this.log.debug('Received getMotion() event for ' + this.name);
@@ -57,9 +57,9 @@ export class MotionService extends BaseService {
     return new Promise((resolve, reject) => {
       this.getStatus().then(success => {
         if (success) {
-          const motionValue = this.deviceStatus.status.motionSensor.motion.value;
-          this.log.debug(`Motion value from ${this.name}: ${motionValue}`);
-          resolve(motionValue === 'active' ? true : false);
+          const lightValue = this.deviceStatus.status.illuminanceMeasurement.illuminance.value;
+          this.log.debug(`Light value from ${this.name}: ${lightValue}`);
+          resolve(lightValue);
         } else {
           reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         }

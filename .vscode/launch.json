@@ -16,7 +16,7 @@
             "args": ["-I", "-D"],
             "outFiles": [
                 //"${workspaceFolder}/**/*.js"
-                "${workspaceFolder}/dist/*.js"
+                "${workspaceFolder}/dist/**/*.js"
             ]
         }
     ]
