@@ -24,7 +24,7 @@ export class HumidityService extends BaseService {
 
     if (pollSensorSeconds > 0) {
       multiServiceAccessory.startPollingState(pollSensorSeconds, this.getHumidity.bind(this), this.service,
-        platform.Characteristic.MotionDetected);
+        platform.Characteristic.CurrentRelativeHumidity);
     }
   }
 

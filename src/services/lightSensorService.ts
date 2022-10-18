@@ -24,7 +24,7 @@ export class LightSensorService extends BaseService {
 
     if (pollSensorSeconds > 0) {
       multiServiceAccessory.startPollingState(pollSensorSeconds, this.getLightLevel.bind(this), this.service,
-        platform.Characteristic.MotionDetected);
+        platform.Characteristic.CurrentAmbientLightLevel);
     }
   }
 

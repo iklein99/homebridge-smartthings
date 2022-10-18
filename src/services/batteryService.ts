@@ -23,7 +23,7 @@ export class BatteryService extends BaseService {
 
     if (pollSensorSeconds > 0) {
       multiServiceAccessory.startPollingState(pollSensorSeconds, this.getBatteryLevel.bind(this), this.service,
-        platform.Characteristic.MotionDetected);
+        platform.Characteristic.BatteryLevel);
     }
   }
 
