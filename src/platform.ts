@@ -6,7 +6,7 @@ import { SwitchPlatformAccessory } from './switchAccessory';
 import axios = require('axios');
 import { BasePlatformAccessory } from './basePlatformAccessory';
 import { FanPlatformAccessory } from './fanAccessory';
-import { GarageDoorPlatformAccessory } from './garageDoorAccessory';
+//import { GarageDoorPlatformAccessory } from './garageDoorAccessory';
 //import { LockPlatformAccessory } from './lockAccessory';
 import { WindowShadeLevelPlatformAccessory } from './windowShadeLevelAccessory';
 //import { SensorAccessory } from './sensorAccessory';
@@ -30,7 +30,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
   private lightCat = 'Light';
   private plugCat = 'SmartPlug';
   private fanCat = 'Fan';
-  private garageDoorCat = 'GarageDoor';
+  //private garageDoorCat = 'GarageDoor';
   //private lockCat = 'SmartLock';
   private windowShadeLevelCat = 'Blind';
   //private sensorCat = 'MotionSensor';
@@ -43,7 +43,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
     this.lightCat,
     this.plugCat,
     this.fanCat,
-    this.garageDoorCat,
+    //this.garageDoorCat,
     //this.lockCat,
     this.windowShadeLevelCat,
     //this.sensorCat,
@@ -276,9 +276,9 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
       case this.fanCat: {
         return new FanPlatformAccessory(this, accessory);
       }
-      case this.garageDoorCat: {
-        return new GarageDoorPlatformAccessory(this, accessory);
-      }
+      // case this.garageDoorCat: {
+      //   return new GarageDoorPlatformAccessory(this, accessory);
+      // }
       // case this.lockCat: {
       //   return new LockPlatformAccessory(this, accessory);
       // }

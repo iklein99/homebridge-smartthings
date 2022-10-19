@@ -10,6 +10,7 @@ import { HumidityService } from './services/humidityService';
 import { LightSensorService } from './services/lightSensorService';
 import { ContactSensorService } from './services/contactSensorService';
 import { LockService } from './services/lockService';
+import { DoorService } from './services/doorService';
 
 
 /**
@@ -27,14 +28,16 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
 
   private services: BaseService[] = [];
 
+  // Order of these matters.  Make sure secondary capabilities like 'battery' and 'contactSensor' are at the end.
   private static capabilityMap = {
+    'doorControl': DoorService,
+    'lock': LockService,
     'motionSensor': MotionService,
-    'battery': BatteryService,
     'temperatureMeasurement': TemperatureService,
     'relativeHumidityMeasurement': HumidityService,
     'illuminanceMeasurement': LightSensorService,
     'contactSensor': ContactSensorService,
-    'lock': LockService,
+    'battery': BatteryService,
   };
 
   constructor(
@@ -46,14 +49,15 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
     super(platform, accessory);
 
     // Add services per capabilities
-    capabilities.forEach((capability) => {
 
-      if (MultiServiceAccessory.capabilitySupported(capability.id)) {
+    Object.keys(MultiServiceAccessory.capabilityMap).forEach((capability) => {
+      if (capabilities.find((c) => c.id === capability)) {
         this.services.push(new (
-          MultiServiceAccessory.capabilityMap[capability.id])(this.platform, this.accessory, this, this.name, this.deviceStatus,
+          MultiServiceAccessory.capabilityMap[capability])(this.platform, this.accessory, this, this.name, this.deviceStatus,
         ));
       }
     });
+
   }
 
   public isOnline(): boolean {
