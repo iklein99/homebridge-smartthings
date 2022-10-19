@@ -10,10 +10,6 @@ export class HumidityService extends BaseService {
     super(platform, accessory, multiServiceAccessory, name, deviceStatus, platform.Service.HumiditySensor);
 
     this.log.debug(`Adding HumidityService to ${this.name}`);
-    // this.service = this.accessory.getService(platform.Service.MotionSensor) ||
-    //   this.accessory.addService(platform.Service.MotionSensor);
-
-    // this.service.setCharacteristic(platform.Characteristic.Name, accessory.context.device.label);
     this.service.getCharacteristic(platform.Characteristic.CurrentRelativeHumidity)
       .onGet(this.getHumidity.bind(this));
 

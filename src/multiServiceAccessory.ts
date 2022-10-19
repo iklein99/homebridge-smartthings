@@ -9,6 +9,7 @@ import { TemperatureService } from './services/temperatureService';
 import { HumidityService } from './services/humidityService';
 import { LightSensorService } from './services/lightSensorService';
 import { ContactSensorService } from './services/contactSensorService';
+import { LockService } from './services/lockService';
 
 
 /**
@@ -33,6 +34,7 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
     'relativeHumidityMeasurement': HumidityService,
     'illuminanceMeasurement': LightSensorService,
     'contactSensor': ContactSensorService,
+    'lock': LockService,
   };
 
   constructor(

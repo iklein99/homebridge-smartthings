@@ -10,10 +10,6 @@ export class MotionService extends BaseService {
     super(platform, accessory, multiServiceAccessory, name, deviceStatus, platform.Service.MotionSensor);
 
     this.log.debug(`Adding MotionService to ${this.name}`);
-    // this.service = this.accessory.getService(platform.Service.MotionSensor) ||
-    //   this.accessory.addService(platform.Service.MotionSensor);
-
-    // this.service.setCharacteristic(platform.Characteristic.Name, accessory.context.device.label);
     this.service.getCharacteristic(platform.Characteristic.MotionDetected)
       .onGet(this.getMotion.bind(this));
 
