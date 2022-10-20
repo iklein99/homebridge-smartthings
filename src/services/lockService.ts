@@ -9,8 +9,9 @@ export class LockService extends BaseService {
 
   constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, multiServiceAccessory: MultiServiceAccessory,
     name: string, deviceStatus) {
-    super(platform, accessory, multiServiceAccessory, name, deviceStatus, platform.Service.LockMechanism);
+    super(platform, accessory, multiServiceAccessory, name, deviceStatus);
 
+    this.setServiceType(platform.Service.LockMechanism);
     // Set the event handlers
     this.log.debug(`Adding LockService to ${this.name}`);
     this.service.getCharacteristic(platform.Characteristic.LockCurrentState)

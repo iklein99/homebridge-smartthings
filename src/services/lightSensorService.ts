@@ -7,7 +7,9 @@ export class LightSensorService extends BaseService {
 
   constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, multiServiceAccessory: MultiServiceAccessory,
     name: string, deviceStatus) {
-    super(platform, accessory, multiServiceAccessory, name, deviceStatus, platform.Service.LightSensor);
+    super(platform, accessory, multiServiceAccessory, name, deviceStatus);
+
+    this.setServiceType(platform.Service.LightSensor);
 
     this.log.debug(`Adding LightSensorService to ${this.name}`);
     this.service.getCharacteristic(platform.Characteristic.CurrentAmbientLightLevel)

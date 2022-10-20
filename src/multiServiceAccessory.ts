@@ -11,6 +11,9 @@ import { LightSensorService } from './services/lightSensorService';
 import { ContactSensorService } from './services/contactSensorService';
 import { LockService } from './services/lockService';
 import { DoorService } from './services/doorService';
+import { SwitchService } from './services/switchService';
+import { LightService } from './services/lightService';
+import { FanService } from './services/fanService';
 
 
 /**
@@ -32,6 +35,7 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
   private static capabilityMap = {
     'doorControl': DoorService,
     'lock': LockService,
+    // 'switch': SwitchService,
     'motionSensor': MotionService,
     'temperatureMeasurement': TemperatureService,
     'relativeHumidityMeasurement': HumidityService,
@@ -40,8 +44,31 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
     'battery': BatteryService,
   };
 
-  constructor(
+  // Maps combinations of supported capabilities to a service
+  private static comboCapabilityMap = [
+    {
+      capabilities: ['switch', 'fanSpeed'],
+      service: FanService,
+    },
+    {
+      capabilities: ['switch', 'switchLevel'],
+      service: LightService,
+    },
+    {
+      capabilities: ['switch', 'colorControl'],
+      service: LightService,
+    },
+    {
+      capabilities: ['switch', 'colorTemperature'],
+      service: LightService,
+    },
+    {
+      capabilities: ['switch'],
+      service: SwitchService,
+    },
+  ];
 
+  constructor(
     platform: IKHomeBridgeHomebridgePlatform,
     accessory: PlatformAccessory,
     capabilities,
@@ -50,6 +77,9 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
 
     // Add services per capabilities
 
+    // If this device has a 'switch' capability, need to look at the combinations to determine what kind of device.  Fans, lights,
+    // switches all have a switch capability and we need to add the correct one.
+
     Object.keys(MultiServiceAccessory.capabilityMap).forEach((capability) => {
       if (capabilities.find((c) => c.id === capability)) {
         this.services.push(new (
@@ -57,7 +87,37 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
         ));
       }
     });
+    if (capabilities.find(c => c.id === 'switch')) {
+      let service = this.findComboService(capabilities);
+      if (service === undefined) {
+        service = SwitchService;
+      }
+      this.services.push(new service(this.platform, this.accessory, this, this.name, this.deviceStatus));
+    }
+  }
 
+  // If this is a capability that needs to be combined with others in order to determone the service,
+  // go through the combinations of cabailities in the map and return the first matching service.
+  // We look at combinations because devices like lights that dim also have switch capabilities
+  // as well as switchlevel capabilities.  Fans have switch and fanlevel capabilities.  This allows
+  // us to find a services that best matches the combination of capabilities reported by the device.
+  public findComboService(deviceCapabilities): typeof BaseService | undefined {
+    let service: typeof BaseService | undefined = undefined;
+
+    MultiServiceAccessory.comboCapabilityMap.forEach(entry => {
+      if (service === undefined) {
+        let found = true;
+        entry.capabilities.forEach(c => {
+          if (!deviceCapabilities.find(dc => dc.id === c)) {
+            found = false;
+          }
+        });
+        if (found) {
+          service = entry.service;
+        }
+      }
+    });
+    return service;
   }
 
   public isOnline(): boolean {
@@ -66,7 +126,7 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
 
   // Find return if a capability is supported by the multi-service accessory
   public static capabilitySupported(capability: string): boolean {
-    if (Object.keys(MultiServiceAccessory.capabilityMap).find(c => c === capability)) {
+    if (Object.keys(MultiServiceAccessory.capabilityMap).find(c => c === capability) || capability === 'switch') {
       return true;
     } else {
       return false;

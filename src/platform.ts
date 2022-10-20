@@ -1,8 +1,8 @@
 import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
-import { LightbulbPlatformAccessory } from './lightBulbAccessory';
-import { SwitchPlatformAccessory } from './switchAccessory';
+//import { LightbulbPlatformAccessory } from './lightBulbAccessory';
+//import { SwitchPlatformAccessory } from './switchAccessory';
 import axios = require('axios');
 import { BasePlatformAccessory } from './basePlatformAccessory';
 import { FanPlatformAccessory } from './fanAccessory';
@@ -26,9 +26,9 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
   // this is used to track restored cached accessories
   public readonly accessories: PlatformAccessory[] = [];
 
-  private switchCat = 'Switch';
-  private lightCat = 'Light';
-  private plugCat = 'SmartPlug';
+  //private switchCat = 'Switch';
+  //private lightCat = 'Light';
+  //private plugCat = 'SmartPlug';
   private fanCat = 'Fan';
   //private garageDoorCat = 'GarageDoor';
   //private lockCat = 'SmartLock';
@@ -39,9 +39,9 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
   //private presenceSensorCapability = 'presenceSensor';
 
   private categories = [
-    this.switchCat,
-    this.lightCat,
-    this.plugCat,
+    //this.switchCat,
+    //this.lightCat,
+    //this.plugCat,
     this.fanCat,
     //this.garageDoorCat,
     //this.lockCat,
@@ -98,6 +98,9 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
       }
 
       this.getOnlineDevices().then((devices) => {
+        if (this.config.UnregisterAll) {
+          this.unregisterDevices(devices, true);
+        }
         this.discoverDevices(devices);
         this.unregisterDevices(devices);
       });
@@ -164,7 +167,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
     });
   }
 
-  unregisterDevices(devices) {
+  unregisterDevices(devices, all = false) {
     const accessoriesToRemove: PlatformAccessory[] = [];
 
     //
@@ -172,6 +175,11 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
     // of current devices, then unregister them.
     //
     this.accessories.forEach(accessory => {
+      if (all) {
+        this.log.info('Unregistering all devices');
+        this.log.info('Will unregister ' + accessory.context.device.label);
+        accessoriesToRemove.push(accessory);
+      }
       if (!devices.find(device => {
         return device.deviceId === accessory.UUID;
       })) {
@@ -260,19 +268,19 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
     }
 
     switch (category) {
-      case this.switchCat: {
-        if (accessory.context.device.components[0].capabilities.find(c => c.id === 'switchLevel')) {
-          return new LightbulbPlatformAccessory(this, accessory);
-        } else {
-          return new SwitchPlatformAccessory(this, accessory);
-        }
-      }
-      case this.plugCat: {
-        return new SwitchPlatformAccessory(this, accessory);
-      }
-      case this.lightCat: {
-        return new LightbulbPlatformAccessory(this, accessory);
-      }
+      // case this.switchCat: {
+      //   if (accessory.context.device.components[0].capabilities.find(c => c.id === 'switchLevel')) {
+      //     return new LightbulbPlatformAccessory(this, accessory);
+      //   } else {
+      //     return new SwitchPlatformAccessory(this, accessory);
+      //   }
+      // }
+      // case this.plugCat: {
+      //   return new SwitchPlatformAccessory(this, accessory);
+      // }
+      // case this.lightCat: {
+      //   return new LightbulbPlatformAccessory(this, accessory);
+      // }
       case this.fanCat: {
         return new FanPlatformAccessory(this, accessory);
       }

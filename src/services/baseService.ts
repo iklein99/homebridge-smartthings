@@ -13,7 +13,7 @@ export class BaseService {
   protected service: Service;
 
   constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, multiServiceAccessory:MultiServiceAccessory,
-    name: string, deviceStatus, serviceType: WithUUID<typeof Service>) {
+    name: string, deviceStatus) {
     this.accessory = accessory;
     // this.service = this.accessory.getService(platform.Service.MotionSensor) || this.accessory.addService(platform.Service.MotionSensor);
     this.platform = platform;
@@ -21,11 +21,14 @@ export class BaseService {
     this.multiServiceAccessory = multiServiceAccessory;
     this.name = name;
     this.deviceStatus = deviceStatus;
+    this.service = new platform.Service.Switch;  // Placeholder
+  }
 
+  protected setServiceType(serviceType: WithUUID<typeof Service>) {
     this.service = this.accessory.getService(serviceType) ||
     this.accessory.addService(serviceType);
 
-    this.service.setCharacteristic(platform.Characteristic.Name, accessory.context.device.label);
+    this.service.setCharacteristic(this.platform.Characteristic.Name, this.accessory.context.device.label);
   }
 
   protected async getStatus():Promise<boolean> {

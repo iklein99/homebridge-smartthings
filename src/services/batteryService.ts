@@ -7,7 +7,8 @@ export class BatteryService extends BaseService {
 
   constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, multiServiceAccessory: MultiServiceAccessory,
     name: string, deviceStatus) {
-    super(platform, accessory, multiServiceAccessory, name, deviceStatus, platform.Service.Battery);
+    super(platform, accessory, multiServiceAccessory, name, deviceStatus);
+    this.setServiceType(platform.Service.Battery);
 
     this.log.debug(`Adding BatteryService to ${this.name}`);
     this.service.getCharacteristic(platform.Characteristic.BatteryLevel)

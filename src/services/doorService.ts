@@ -11,8 +11,8 @@ export class DoorService extends BaseService {
     name: string, deviceStatus) {
     // This can either be a Door or Garage Door Opener
 
-    super(platform, accessory, multiServiceAccessory, name, deviceStatus, platform.Service.GarageDoorOpener);
-
+    super(platform, accessory, multiServiceAccessory, name, deviceStatus);
+    this.setServiceType(platform.Service.GarageDoorOpener);
     // Set the event handlers
     this.log.debug(`Adding DoorService to ${this.name}`);
     this.service.getCharacteristic(platform.Characteristic.CurrentDoorState)

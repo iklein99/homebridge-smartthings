@@ -7,8 +7,9 @@ export class TemperatureService extends BaseService {
 
   constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, multiServiceAccessory: MultiServiceAccessory,
     name: string, deviceStatus) {
-    super(platform, accessory, multiServiceAccessory, name, deviceStatus, platform.Service.TemperatureSensor);
+    super(platform, accessory, multiServiceAccessory, name, deviceStatus);
 
+    this.setServiceType(platform.Service.TemperatureSensor);
     this.log.debug(`Adding MotionService to ${this.name}`);
     this.service.getCharacteristic(platform.Characteristic.CurrentTemperature)
       .onGet(this.getTemperature.bind(this));

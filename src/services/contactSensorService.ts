@@ -7,8 +7,8 @@ export class ContactSensorService extends BaseService {
 
   constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, multiServiceAccessory: MultiServiceAccessory,
     name: string, deviceStatus) {
-    super(platform, accessory, multiServiceAccessory, name, deviceStatus, platform.Service.ContactSensor);
-
+    super(platform, accessory, multiServiceAccessory, name, deviceStatus);
+    this.setServiceType(platform.Service.ContactSensor);
     this.log.debug(`Adding ContactService to ${this.name}`);
 
     this.service.getCharacteristic(platform.Characteristic.ContactSensorState)

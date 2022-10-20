@@ -7,8 +7,9 @@ export class MotionService extends BaseService {
 
   constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, multiServiceAccessory: MultiServiceAccessory,
     name: string, deviceStatus) {
-    super(platform, accessory, multiServiceAccessory, name, deviceStatus, platform.Service.MotionSensor);
+    super(platform, accessory, multiServiceAccessory, name, deviceStatus);
 
+    this.setServiceType(platform.Service.MotionSensor);
     this.log.debug(`Adding MotionService to ${this.name}`);
     this.service.getCharacteristic(platform.Characteristic.MotionDetected)
       .onGet(this.getMotion.bind(this));

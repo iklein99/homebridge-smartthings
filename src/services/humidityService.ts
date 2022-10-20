@@ -7,8 +7,9 @@ export class HumidityService extends BaseService {
 
   constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, multiServiceAccessory: MultiServiceAccessory,
     name: string, deviceStatus) {
-    super(platform, accessory, multiServiceAccessory, name, deviceStatus, platform.Service.HumiditySensor);
+    super(platform, accessory, multiServiceAccessory, name, deviceStatus);
 
+    this.setServiceType(platform.Service.HumiditySensor);
     this.log.debug(`Adding HumidityService to ${this.name}`);
     this.service.getCharacteristic(platform.Characteristic.CurrentRelativeHumidity)
       .onGet(this.getHumidity.bind(this));
