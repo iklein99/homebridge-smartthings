@@ -1,0 +1,39 @@
+{
+    "bridge": {
+        "name": "Homebridge Test",
+        "username": "0E:51:92:F1:FA:00",
+        "port": 51908,
+        "pin": "402-73-727",
+        "advertiser": "avahi"
+    },
+    "accessories": [],
+    "platforms": [
+        {
+            "name": "Config",
+            "port": 8581,
+            "auth": "none",
+            "theme": "auto",
+            "tempUnits": "c",
+            "lang": "auto",
+            "platform": "config"
+        },
+        {
+            "name": "Test Smartthings",
+            "BaseURL": "https://api.smartthings.com/v1/",
+            "AccessToken": "def1b90b-f15a-4061-a2b7-116e7d9028cc",
+            "GarageDoorMaxPoll": 9960,
+            "PollLocksSeconds": 9960,
+            "PollDoorsSeconds": 9960,
+            "PollSensorsSeconds": 9905,
+            "PollSwitchesAndLightsSeconds": 9910,
+            "IgnoreLocations": [
+            ],
+            "IgnoreDevices": [
+                "Danfoss TRV",
+                "Bedroom AC",
+                "Warm floor"
+            ],
+            "platform": "TestHomeBridgeSmartThings"
+        }
+    ]
+}

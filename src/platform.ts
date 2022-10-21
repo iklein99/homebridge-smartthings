@@ -106,7 +106,10 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
       this.axInstance.get(command).then((res) => {
         res.data.items.forEach((device) => {
           if (this.config.IgnoreDevices && this.config.IgnoreDevices.find(d => d.toLowerCase() === device.label.toLowerCase())) {
-            this.log.info(`Ignoring ${device.label} because it is in the Ignore Devices list`);
+            this.log.info(`Adding ${device.label} because it is in the Ignore Devices list`);
+            devices.push(device);
+            return;
+          } else {
             return;
           }
 
