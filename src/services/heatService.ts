@@ -29,17 +29,8 @@ import { IKHomeBridgeHomebridgePlatform } from '../platform';
 import { BaseService } from './baseService';
 import { MultiServiceAccessory } from '../multiServiceAccessory';
 
-/*
-export declare class TargetHeatingCoolingState extends Characteristic {
-    static readonly UUID: string;
-    static readonly OFF = 0;
-    static readonly HEAT = 1;
-    static readonly COOL = 2;
-    static readonly AUTO = 3;
-    constructor();
-}
-*/
-var stateMap = ['off','heat','cool','auto']
+
+const stateMap = ['off', 'heat', 'cool', 'auto'];
 
 
 export class HeatService extends BaseService{
@@ -48,23 +39,24 @@ export class HeatService extends BaseService{
   constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, multiServiceAccessory:MultiServiceAccessory,
     name: string, deviceStatus) {
     super(platform, accessory, multiServiceAccessory, name, deviceStatus);
-    
-    this.log.debug('Creating Heat Service for ', name);
-    
-    this.service = this.accessory.getService(platform.Service.Thermostat ) ||
-      this.accessory.addService(platform.Service.Thermostat);
-  // }
 
-  // startService(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory): Service {
-    this.log.debug('Starting HeatService for ' + this.name);
+    this.setServiceType(platform.Service.Thermostat);
 
-    this.service.setCharacteristic(platform.Characteristic.Name, accessory.context.device.label);
-    
+    this.service.getCharacteristic(platform.Characteristic.CurrentHeatingCoolingState)
+      .setProps({
+        validValues: [platform.Characteristic.TargetHeatingCoolingState.OFF, platform.Characteristic.TargetHeatingCoolingState.AUTO],
+      });
+
     this.service.getCharacteristic(platform.Characteristic.TargetHeatingCoolingState)
       .onGet(this.getTargetHeatingCoolingState.bind(this))
       .onSet(this.setTargetHeatingCoolingState.bind(this));
 
+
     this.service.getCharacteristic(platform.Characteristic.TargetTemperature)
+      .setProps({
+        minValue: 17,
+        maxValue: 32,
+      })
       .onGet(this.getTargetTemperature.bind(this))
       .onSet(this.setTargetTemperature.bind(this));
 
@@ -85,11 +77,14 @@ export class HeatService extends BaseService{
             return reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
           }
 
-          this.log.debug(this.deviceStatus);
+          const status = this.deviceStatus.status;
+          if (status.thermostatMode === undefined) {
+            resolve(this.platform.Characteristic.TargetHeatingCoolingState.AUTO);
+            return;
+          }
 
-          const value = this.deviceStatus.status.thermostatMode?.thermostatMode?.value ?? 'auto';
-          
-          resolve(stateMap.indexOf(value));
+          const value = stateMap.indexOf(status.thermostatMode.thermostatMode.value);
+          resolve(value);
         });
     });
   }
@@ -97,16 +92,16 @@ export class HeatService extends BaseService{
   async setTargetHeatingCoolingState(value: CharacteristicValue): Promise<void> {
     this.log.debug('Received setTargetHeatingCoolingState(' + value + ') event for ' + this.name);
 
-    var targetState = stateMap[+value];
+    const targetState = stateMap[+value];
 
     if (!this.multiServiceAccessory.isOnline()) {
       this.log.info(`${this.name} is offline`);
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
-    
+
     this.log.debug('Sending setThermostatMode(' + targetState + ') event for ' + this.name);
 
-    this.multiServiceAccessory.sendCommand('thermostatMode', "setThermostatMode", [targetState] ).then((success) => {
+    this.multiServiceAccessory.sendCommand('thermostatMode', 'setThermostatMode', [targetState] ).then((success) => {
       if (success) {
         this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
       } else {
@@ -115,11 +110,8 @@ export class HeatService extends BaseService{
     });
   }
 
-
-
-
   async setTargetTemperature(value: CharacteristicValue): Promise<void> {
-    this.multiServiceAccessory.sendCommand('thermostatHeatingSetpoint', "setHeatingSetpoint", [value] ).then((success) => {
+    this.multiServiceAccessory.sendCommand('thermostatHeatingSetpoint', 'setHeatingSetpoint', [value] ).then((success) => {
       if (success) {
         this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
       } else {
@@ -140,11 +132,9 @@ export class HeatService extends BaseService{
             return reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
           }
           const value = this.deviceStatus.status.thermostatHeatingSetpoint.heatingSetpoint.value;
-          //this.log.debug(`value from ${this.name}: ${value}`);
-          
           const current = this.deviceStatus.status.temperatureMeasurement?.temperature?.value?? value;
           this.service.setCharacteristic(this.platform.Characteristic.CurrentTemperature, current);
-  
+
           resolve(value);
         });
     });

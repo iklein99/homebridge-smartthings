@@ -39,6 +39,8 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
 
   // Order of these matters.  Make sure secondary capabilities like 'battery' and 'contactSensor' are at the end.
   private static capabilityMap = {
+    'thermostatHeatingSetpoint': HeatService,
+    'fanSpeed': FanSpeedService,
     'doorControl': DoorService,
     'lock': LockService,
     // 'switch': SwitchService,
