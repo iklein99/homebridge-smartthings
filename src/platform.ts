@@ -3,7 +3,6 @@ import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import axios = require('axios');
 import { BasePlatformAccessory } from './basePlatformAccessory';
-import { WindowShadeLevelPlatformAccessory } from './windowShadeLevelAccessory';
 import { PresencePlatformAccessory } from './presenceAccessory';
 import { MultiServiceAccessory } from './multiServiceAccessory';
 
@@ -18,13 +17,6 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
 
   // this is used to track restored cached accessories
   public readonly accessories: PlatformAccessory[] = [];
-
-  private windowShadeLevelCat = 'Blind';
-
-  private categories = [
-    this.windowShadeLevelCat,
-  ];
-
 
   private locationIDsToIgnore: string[] = [];
   private roomsIDsToIgnore: string[] = [];
@@ -174,8 +166,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
 
       this.log.debug('DEVICE DATA: ' + JSON.stringify(device));
 
-      if (device.components[0].categories.find(cat => this.categories.find(a => a === cat.name)) ||
-        this.findSupportedCapability(device)) {
+      if (this.findSupportedCapability(device)) {
         const existingAccessory = this.accessories.find(accessory => accessory.UUID === device.deviceId);
 
         if (existingAccessory) {
@@ -223,28 +214,15 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
   }
 
   createAccessoryObject(device, accessory): BasePlatformAccessory {
-    const category = this.categories.find(c => device.components[0].categories.find(cat => cat.name === c));
     const capabilities = device.components[0].capabilities;
 
     // For a window shade, not sure if the category is reliable, but we look for the capability.
 
-    if (device.components[0].capabilities.find(c => c.id === 'windowShadeLevel')) {
-      return new WindowShadeLevelPlatformAccessory(this, accessory);
-    }
-
-    switch (category) {
-      case this.windowShadeLevelCat: {
-        return new WindowShadeLevelPlatformAccessory(this, accessory);
-      }
-
-      default: {
-        if (capabilities.find((c) => c.id === 'presenceSensor')) {
-          return new PresencePlatformAccessory(this, accessory);
-        } else {
-          return new MultiServiceAccessory(this, accessory, capabilities);
-          //throw `Unexpected device category: ${category}`;
-        }
-      }
+    if (capabilities.find((c) => c.id === 'presenceSensor')) {
+      return new PresencePlatformAccessory(this, accessory);
+    } else {
+      return new MultiServiceAccessory(this, accessory, capabilities);
+      //throw `Unexpected device category: ${category}`;
     }
   }
 }

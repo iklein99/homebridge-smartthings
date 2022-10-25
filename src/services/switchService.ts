@@ -11,7 +11,7 @@ export class SwitchService extends BaseService {
 
     this.setServiceType(platform.Service.Switch);
     // Set the event handlers
-    this.log.debug(`Adding LockService to ${this.name}`);
+    this.log.debug(`Adding SwitchService to ${this.name}`);
     this.service.getCharacteristic(platform.Characteristic.On)
       .onGet(this.getSwitchState.bind(this))
       .onSet(this.setSwitchState.bind(this));
