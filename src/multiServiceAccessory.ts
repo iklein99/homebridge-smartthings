@@ -14,6 +14,7 @@ import { DoorService } from './services/doorService';
 import { SwitchService } from './services/switchService';
 import { LightService } from './services/lightService';
 import { FanService } from './services/fanService';
+import { OccupancySensorService } from './services/occupancySensorService';
 
 
 /**
@@ -37,6 +38,7 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
     'lock': LockService,
     // 'switch': SwitchService,
     'motionSensor': MotionService,
+    'presenceSensor': OccupancySensorService,
     'temperatureMeasurement': TemperatureService,
     'relativeHumidityMeasurement': HumidityService,
     'illuminanceMeasurement': LightSensorService,

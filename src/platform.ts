@@ -3,7 +3,6 @@ import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import axios = require('axios');
 import { BasePlatformAccessory } from './basePlatformAccessory';
-import { PresencePlatformAccessory } from './presenceAccessory';
 import { MultiServiceAccessory } from './multiServiceAccessory';
 
 /**
@@ -215,15 +214,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
 
   createAccessoryObject(device, accessory): BasePlatformAccessory {
     const capabilities = device.components[0].capabilities;
-
-    // For a window shade, not sure if the category is reliable, but we look for the capability.
-
-    if (capabilities.find((c) => c.id === 'presenceSensor')) {
-      return new PresencePlatformAccessory(this, accessory);
-    } else {
-      return new MultiServiceAccessory(this, accessory, capabilities);
-      //throw `Unexpected device category: ${category}`;
-    }
+    return new MultiServiceAccessory(this, accessory, capabilities);
   }
 }
 
