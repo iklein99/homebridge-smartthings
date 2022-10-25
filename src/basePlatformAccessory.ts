@@ -106,24 +106,6 @@ export abstract class BasePlatformAccessory {
           }
           resolve(false);
         });
-        // try {
-        //   const res = await this.axInstance.get(this.statusURL);
-        //   this.failureCount = 0;
-        //   if (res.data.components.main !== undefined) {
-        //     this.deviceStatus.status = res.data.components.main;
-        //     this.deviceStatus.timestamp = Date.now();
-        //     this.log.debug(`Updates status for ${this.name}: ${JSON.stringify(this.deviceStatus.status)}`);
-        //   }
-        // } catch (error) {
-        //   this.failureCount++;
-        //   this.log.error(`Failed to request status from ${this.name}: ${error}.  This is failure number ${this.failureCount}`);
-        //   if (this.failureCount >= 5) {
-        //     this.log.error(`Exceeded allowed failures for ${this.name}.  Device is offline`);
-        //     this.giveUpTime = Date.now();
-        //     this.online = false;
-        //   }
-        //   return false;
-        // }
       } else {
         resolve(true);
       }

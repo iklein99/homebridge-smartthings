@@ -1,17 +1,10 @@
 import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
-//import { LightbulbPlatformAccessory } from './lightBulbAccessory';
-//import { SwitchPlatformAccessory } from './switchAccessory';
 import axios = require('axios');
 import { BasePlatformAccessory } from './basePlatformAccessory';
-import { FanPlatformAccessory } from './fanAccessory';
-//import { GarageDoorPlatformAccessory } from './garageDoorAccessory';
-//import { LockPlatformAccessory } from './lockAccessory';
 import { WindowShadeLevelPlatformAccessory } from './windowShadeLevelAccessory';
-//import { SensorAccessory } from './sensorAccessory';
 import { PresencePlatformAccessory } from './presenceAccessory';
-//import { ContactSensorAccessory } from './contactSensorAccessory';
 import { MultiServiceAccessory } from './multiServiceAccessory';
 
 /**
@@ -26,33 +19,12 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
   // this is used to track restored cached accessories
   public readonly accessories: PlatformAccessory[] = [];
 
-  //private switchCat = 'Switch';
-  //private lightCat = 'Light';
-  //private plugCat = 'SmartPlug';
-  private fanCat = 'Fan';
-  //private garageDoorCat = 'GarageDoor';
-  //private lockCat = 'SmartLock';
   private windowShadeLevelCat = 'Blind';
-  //private sensorCat = 'MotionSensor';
-  //private contactSensorCat = 'ContactSensor';
-
-  //private presenceSensorCapability = 'presenceSensor';
 
   private categories = [
-    //this.switchCat,
-    //this.lightCat,
-    //this.plugCat,
-    this.fanCat,
-    //this.garageDoorCat,
-    //this.lockCat,
     this.windowShadeLevelCat,
-    //this.sensorCat,
-    //this.contactSensorCat,
   ];
 
-  // private supportedCapabilities = [
-  //   this.presenceSensorCapability,
-  // ];
 
   private locationIDsToIgnore: string[] = [];
   private roomsIDsToIgnore: string[] = [];
@@ -82,13 +54,6 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
     this.api.on('didFinishLaunching', async () => {
       log.debug('Executed didFinishLaunching callback');
       // run the method to discover / register your devices as accessories
-
-      // REMOVE ME
-      // this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, this.accessories);
-      // let acc;
-      // while ((acc = this.accessories.pop()) !== undefined) {
-      //   this.log.debug('Cleared ' + acc.displayName);
-      // }
 
       // If locations or rooms to ignore are configured, then
       // load request those from Smartthings to build the id lists.
@@ -268,37 +233,9 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
     }
 
     switch (category) {
-      // case this.switchCat: {
-      //   if (accessory.context.device.components[0].capabilities.find(c => c.id === 'switchLevel')) {
-      //     return new LightbulbPlatformAccessory(this, accessory);
-      //   } else {
-      //     return new SwitchPlatformAccessory(this, accessory);
-      //   }
-      // }
-      // case this.plugCat: {
-      //   return new SwitchPlatformAccessory(this, accessory);
-      // }
-      // case this.lightCat: {
-      //   return new LightbulbPlatformAccessory(this, accessory);
-      // }
-      case this.fanCat: {
-        return new FanPlatformAccessory(this, accessory);
-      }
-      // case this.garageDoorCat: {
-      //   return new GarageDoorPlatformAccessory(this, accessory);
-      // }
-      // case this.lockCat: {
-      //   return new LockPlatformAccessory(this, accessory);
-      // }
       case this.windowShadeLevelCat: {
         return new WindowShadeLevelPlatformAccessory(this, accessory);
       }
-      // case this.sensorCat: {
-      //   return new SensorAccessory(this, accessory);
-      // }
-      // case this.contactSensorCat: {
-      //   return new ContactSensorAccessory(this, accessory);
-      // }
 
       default: {
         if (capabilities.find((c) => c.id === 'presenceSensor')) {
