@@ -27,7 +27,7 @@ export class FanService extends BaseService {
     }
   }
 
-  // Set the target state of the lock
+  // Set the target
   async setSwitchState(value: CharacteristicValue) {
     this.log.debug('Received setSwitchState(' + value + ') event for ' + this.name);
 

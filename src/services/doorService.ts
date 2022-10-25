@@ -53,7 +53,7 @@ export class DoorService extends BaseService {
     // reset the target state to the current state.
 
     if (Date.now() - this.doorInTransitionStart > 20000) {
-      this.multiServiceAccessory.refreshStatus().then(success => {
+      this.getStatus().then(success => {
         if (!success) {
           throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
         }
@@ -89,6 +89,7 @@ export class DoorService extends BaseService {
     this.multiServiceAccessory.sendCommand('doorControl', command).then((success) => {
       if (success) {
         this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
+        this.deviceStatus.timestamp = 0;  // Force refresh
       } else {
         this.log.error(`Command failed for ${this.name}`);
       }

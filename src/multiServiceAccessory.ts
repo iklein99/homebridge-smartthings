@@ -133,7 +133,7 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
     }
   }
 
-  public refreshStatus(): Promise<boolean> {
+  public async refreshStatus(): Promise<boolean> {
     return super.refreshStatus();
   }
 

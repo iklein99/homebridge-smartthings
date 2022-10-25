@@ -81,27 +81,53 @@ export abstract class BasePlatformAccessory {
   // 4 seconds since last refresh
   //
   protected async refreshStatus(): Promise<boolean> {
-    if (Date.now() - this.deviceStatus.timestamp > 4000) {
-      try {
-        const res = await this.axInstance.get(this.statusURL);
+    return new Promise((resolve) => {
+      this.log.debug(`Refreshing status for ${this.name} - current timestamp is ${this.deviceStatus.timestamp}`);
+      if ((this.deviceStatus.status === undefined) || (Date.now() - this.deviceStatus.timestamp > 5000)) {
+        this.log.debug(`Calling Smartthings to get an update for ${this.name}`);
         this.failureCount = 0;
-        if (res.data.components.main !== undefined) {
-          this.deviceStatus.status = res.data.components.main;
-          this.deviceStatus.timestamp = Date.now();
-          this.log.debug(`Updates status for ${this.name}: ${JSON.stringify(this.deviceStatus.status)}`);
-        }
-      } catch (error) {
-        this.failureCount++;
-        this.log.error(`Failed to request status from ${this.name}: ${error}.  This is failure number ${this.failureCount}`);
-        if (this.failureCount >= 5) {
-          this.log.error(`Exceeded allowed failures for ${this.name}.  Device is offline`);
-          this.giveUpTime = Date.now();
-          this.online = false;
-        }
-        return false;
+        this.axInstance.get(this.statusURL).then((res) => {
+          if (res.data.components.main !== undefined) {
+            this.deviceStatus.status = res.data.components.main;
+            this.deviceStatus.timestamp = Date.now();
+            this.log.debug(`Updated status for ${this.name}: ${JSON.stringify(this.deviceStatus.status)}`);
+            resolve(true);
+          } else {
+            this.log.debug(`No status returned for ${this.name}`);
+            resolve(false);
+          }
+        }).catch(error => {
+          this.failureCount++;
+          this.log.error(`Failed to request status from ${this.name}: ${error}.  This is failure number ${this.failureCount}`);
+          if (this.failureCount >= 5) {
+            this.log.error(`Exceeded allowed failures for ${this.name}.  Device is offline`);
+            this.giveUpTime = Date.now();
+            this.online = false;
+          }
+          resolve(false);
+        });
+        // try {
+        //   const res = await this.axInstance.get(this.statusURL);
+        //   this.failureCount = 0;
+        //   if (res.data.components.main !== undefined) {
+        //     this.deviceStatus.status = res.data.components.main;
+        //     this.deviceStatus.timestamp = Date.now();
+        //     this.log.debug(`Updates status for ${this.name}: ${JSON.stringify(this.deviceStatus.status)}`);
+        //   }
+        // } catch (error) {
+        //   this.failureCount++;
+        //   this.log.error(`Failed to request status from ${this.name}: ${error}.  This is failure number ${this.failureCount}`);
+        //   if (this.failureCount >= 5) {
+        //     this.log.error(`Exceeded allowed failures for ${this.name}.  Device is offline`);
+        //     this.giveUpTime = Date.now();
+        //     this.online = false;
+        //   }
+        //   return false;
+        // }
+      } else {
+        resolve(true);
       }
-    }
-    return true;
+    });
   }
 
   protected startPollingState(pollSeconds: number, getValue: () => Promise<CharacteristicValue>, service: Service,

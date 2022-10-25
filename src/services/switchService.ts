@@ -38,6 +38,7 @@ export class SwitchService extends BaseService {
     this.multiServiceAccessory.sendCommand('switch', value ? 'on' : 'off').then((success) => {
       if (success) {
         this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
+        this.deviceStatus.timestamp = 0;  // Force a refresh next query.
       } else {
         this.log.error(`Command failed for ${this.name}`);
       }
@@ -59,7 +60,7 @@ export class SwitchService extends BaseService {
           } catch(error) {
             this.log.error(`Missing switch status from ${this.name}`);
           }
-          this.log.debug(`LockState value from ${this.name}: ${switchState}`);
+          this.log.debug(`Switch value from ${this.name}: ${switchState}`);
           resolve(switchState === 'on');
         } else {
           reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
