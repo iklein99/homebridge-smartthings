@@ -12,6 +12,8 @@ This is yet another smartthings plugin for Homebridge.  This requires no access 
 require a lot of work to install.  It will discover devices automatically as well as unregister devices that are removed
 from your smarttthings network.  This is currently under development.
 
+## New in 1.4.8
+Support for Leak (water) detectors.
 ## New in 1.4.7
 Rearchitecte plugin to handle multi service devices.  Changing the way services are added based on capabilities reported in 
 Smartthings rather than the category, which may not be accurate and is an optional field.  
