@@ -37,6 +37,9 @@ export class BatteryService extends BaseService {
       this.getStatus().then(success => {
         if (success) {
           const batteryLevel = this.deviceStatus.status.battery.battery.value;
+          if (batteryLevel === null) {
+            return reject (new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+          }
           this.log.debug(`Battery value from ${this.name}: ${batteryLevel}`);
           resolve(batteryLevel);
         } else {
@@ -55,6 +58,9 @@ export class BatteryService extends BaseService {
       this.getStatus().then(success => {
         if (success) {
           const batteryLevel = this.deviceStatus.status.battery.battery.value;
+          if (batteryLevel === null) {
+            return reject (new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+          }
           if (batteryLevel > 40) {
             this.log.debug(`${this.name} battery level normal`);
           } else {
