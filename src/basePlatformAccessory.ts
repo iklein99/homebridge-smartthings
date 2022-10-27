@@ -122,7 +122,7 @@ export abstract class BasePlatformAccessory {
             this.log.debug(`${this.name} polling...`);
             service.updateCharacteristic(chracteristic, v);
           }).catch(() => {  // If we get an error, ignore
-            this.log.info(`Poll failure on ${this.name}`);
+            this.log.warn(`Poll failure on ${this.name}`);
             return;
           });
           // Update target if we have to
