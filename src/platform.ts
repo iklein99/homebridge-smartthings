@@ -53,12 +53,15 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
         await this.getLocationsToIgnore();
       }
 
+
       this.getOnlineDevices().then((devices) => {
         if (this.config.UnregisterAll) {
           this.unregisterDevices(devices, true);
         }
         this.discoverDevices(devices);
         this.unregisterDevices(devices);
+      }).catch(reason => {
+        this.log.error(`Could not load devices from Smartthings: ${reason}.  Check your configuration`);
       });
     });
   }

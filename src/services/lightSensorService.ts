@@ -16,7 +16,8 @@ export class LightSensorService extends SensorService {
         this.log.warn(`${this.name} returned bad value for status`);
         throw('Bad Value');
       }
-      return status.illuminanceMeasurement.illuminance.value;
+      // Fix when value comes back as Zero
+      return status.illuminanceMeasurement.illuminance.value <= 0 ? .0001 : status.illuminanceMeasurement.illuminance.value;
     });
   }
 }
