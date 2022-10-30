@@ -12,6 +12,11 @@ This is yet another smartthings plugin for Homebridge.  This requires no access 
 require a lot of work to install.  It will discover devices automatically as well as unregister devices that are removed
 from your smarttthings network.  This is currently under development.
 
+## Fixed in 1.4.10
+* Error messages when light sensor returns 0.  
+* Error caused Homebridge to quit during startup
+* Error when locks or doors were offline cuases Homebridge to fail.
+
 ## Fixed in 1.4.9
 Will ignore (warning will be shown) if a battery is returning null.  Won't convert temp to celcius if it is being reported
 to in celcius.

@@ -4,7 +4,7 @@ import { BaseService } from './baseService';
 import { MultiServiceAccessory } from '../multiServiceAccessory';
 
 export class DoorService extends BaseService {
-  private targetState = 0;
+  private targetState = this.platform.Characteristic.TargetDoorState.OPEN;
   private doorInTransitionStart = 0;
 
   constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, multiServiceAccessory: MultiServiceAccessory,
@@ -42,29 +42,34 @@ export class DoorService extends BaseService {
 
     if (PollDoorsSeconds > 0) {
       multiServiceAccessory.startPollingState(PollDoorsSeconds, this.getCurrentDoorState.bind(this), this.service,
-        platform.Characteristic.CurrentDoorState,
-        this.platform.Characteristic.TargetDoorState, this.getTargetDoorState.bind(this));
+        platform.Characteristic.CurrentDoorState);
+      //this.platform.Characteristic.TargetDoorState, this.getTargetDoorState.bind(this));
     }
   }
 
   // Return the current target state
-  getTargetDoorState(): number {
+  async getTargetDoorState(): Promise<CharacteristicValue> {
     // If it has been more than 20 seconds since we've sent a transition command,
     // reset the target state to the current state.
 
     if (Date.now() - this.doorInTransitionStart > 20000) {
-      this.getStatus().then(success => {
-        if (!success) {
-          throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-        }
-        this.targetState = this.deviceStatus.status.doorControl.door.value === 'closed' ||
-          this.deviceStatus.status.doorControl.door.value === 'closing' ?
-          this.platform.Characteristic.TargetDoorState.CLOSED:
-          this.platform.Characteristic.TargetDoorState.OPEN;
-        this.log.debug(`Reset ${this.name} to ${this.targetState}`);
+      return new Promise((resolve, reject) => {
+        this.getStatus().then(success => {
+          if (!success) {
+            reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+            return;
+          }
+          this.targetState = this.deviceStatus.status.doorControl.door.value === 'closed' ||
+            this.deviceStatus.status.doorControl.door.value === 'closing' ?
+            this.platform.Characteristic.TargetDoorState.CLOSED :
+            this.platform.Characteristic.TargetDoorState.OPEN;
+          this.log.debug(`Reset ${this.name} to ${this.targetState}`);
+          resolve(this.targetState);
+        });
       });
+    } else {
+      return this.targetState;
     }
-    return this.targetState;
   }
 
   // Set the target state of the door
