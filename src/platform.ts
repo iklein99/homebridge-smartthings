@@ -168,7 +168,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
 
       this.log.debug('DEVICE DATA: ' + JSON.stringify(device));
 
-      if (this.findSupportedCapability(device)) {
+      if (!!IKHomeBridgeHomebridgePlatform.findSupportedCapability(device)) {
         const existingAccessory = this.accessories.find(accessory => accessory.UUID === device.deviceId);
 
         if (existingAccessory) {
@@ -210,13 +210,19 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
     });
   }
 
-  findSupportedCapability(device): boolean {
+  public static findSupportedCapability(device): any {
     // return (device.components[0].capabilities.find((ca) => this.supportedCapabilities.find((cb => ca.id === cb))));
-    return (device.components[0].capabilities.find((ca) => MultiServiceAccessory.capabilitySupported(ca.id)));
+    for (const component of device.components) {
+      const componentSupported = component.capabilities.find((ca) => MultiServiceAccessory.capabilitySupported(ca.id));
+      if (componentSupported) {
+        return component.capabilities;
+      }
+    }
+    return undefined;
   }
 
   createAccessoryObject(device, accessory): BasePlatformAccessory {
-    const capabilities = device.components[0].capabilities;
+    const capabilities = IKHomeBridgeHomebridgePlatform.findSupportedCapability(device);
     return new MultiServiceAccessory(this, accessory, capabilities);
   }
 }

@@ -17,7 +17,8 @@ export class LightService extends BaseService {
       .onGet(this.getSwitchState.bind(this))
       .onSet(this.setSwitchState.bind(this));
 
-    if (accessory.context.device.components[0].capabilities.find(c => c.id === 'switchLevel')) {
+    const capabilities = IKHomeBridgeHomebridgePlatform.findSupportedCapability(accessory.context.device) || [];
+    if (capabilities.find(c => c.id === 'switchLevel')) {
       this.log.debug(`${this.name} supports switchLevel`);
       this.service.getCharacteristic(platform.Characteristic.Brightness)
         .onSet(this.setLevel.bind(this))
@@ -25,7 +26,7 @@ export class LightService extends BaseService {
     }
 
     // If this bulb supports colorTemperature, then add those handlers
-    if (accessory.context.device.components[0].capabilities.find(c => c.id === 'colorTemperature')) {
+    if (capabilities.find(c => c.id === 'colorTemperature')) {
       this.log.debug(`${this.name} supports colorTemperature`);
       this.service.getCharacteristic(platform.Characteristic.ColorTemperature)
         .onSet(this.setColorTemp.bind(this))
@@ -33,7 +34,7 @@ export class LightService extends BaseService {
     }
 
     // If we support color control...
-    if (accessory.context.device.components[0].capabilities.find(c => c.id === 'colorControl')) {
+    if (capabilities.find(c => c.id === 'colorControl')) {
       this.log.debug(`${this.name} supports colorControl`);
       this.service.getCharacteristic(platform.Characteristic.Hue)
         .onSet(this.setHue.bind(this))
@@ -194,7 +195,7 @@ export class LightService extends BaseService {
     });
   }
 
-  async getHue(): Promise < CharacteristicValue > {
+  async getHue(): Promise<CharacteristicValue> {
     return new Promise((resolve, reject) => {
       this.getStatus().then((success) => {
         if (!success) {
@@ -229,7 +230,7 @@ export class LightService extends BaseService {
     });
   }
 
-  async getSaturation(): Promise < CharacteristicValue > {
+  async getSaturation(): Promise<CharacteristicValue> {
     return new Promise((resolve, reject) => {
       this.getStatus().then((success) => {
         if (!success) {
