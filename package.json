@@ -39,5 +39,9 @@
     "rimraf": "^3.0.2",
     "ts-node": "^10.3.0",
     "typescript": "^4.4.4"
+  },
+  "funding": {
+    "type": "paypal",
+    "url": "https://www.paypal.com/paypalme/iklein99"
   }
 }

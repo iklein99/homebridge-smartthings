@@ -5,12 +5,18 @@
 
 </p>
 
+[![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
 
 # Smartthings Homebridge Plugin 
 
 This is yet another smartthings plugin for Homebridge.  This requires no access to the legacy smartthings app, and doesn't
 require a lot of work to install.  It will discover devices automatically as well as unregister devices that are removed
 from your smarttthings network.  This is currently under development.
+
+## New in 1.4.11
+* Smoke detector support
+* The plugin is now verfied!
+* Added funding link in homebridge
 
 ## Fixed in 1.4.10
 * Error messages when light sensor returns 0.  
