@@ -17,6 +17,7 @@ import { FanService } from './services/fanService';
 import { OccupancySensorService } from './services/occupancySensorService';
 import { LeakDetectorService } from './services/leakDetector';
 import { SmokeDetectorService } from './services/smokeDetector';
+import { CarbonMonoxideDetectorService } from './services/carbonMonoxideDetector';
 
 
 /**
@@ -42,6 +43,7 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
     'motionSensor': MotionService,
     'waterSensor' : LeakDetectorService,
     'smokeDetector': SmokeDetectorService,
+    'carbonMonoxideDetector': CarbonMonoxideDetectorService,
     'presenceSensor': OccupancySensorService,
     'temperatureMeasurement': TemperatureService,
     'relativeHumidityMeasurement': HumidityService,
