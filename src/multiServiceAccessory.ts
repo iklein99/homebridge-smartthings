@@ -143,7 +143,7 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
 
   public startPollingState(pollSeconds: number, getValue: () => Promise<CharacteristicValue>, service: Service,
     chracteristic: WithUUID<new () => Characteristic>, targetStateCharacteristic?: WithUUID<new () => Characteristic>,
-    getTargetState?: () => CharacteristicValue) {
+    getTargetState?: () => Promise<CharacteristicValue>) {
     return super.startPollingState(pollSeconds, getValue, service, chracteristic, targetStateCharacteristic, getTargetState);
   }
 
