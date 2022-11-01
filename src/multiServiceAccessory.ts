@@ -18,6 +18,7 @@ import { OccupancySensorService } from './services/occupancySensorService';
 import { LeakDetectorService } from './services/leakDetector';
 import { SmokeDetectorService } from './services/smokeDetector';
 import { CarbonMonoxideDetectorService } from './services/carbonMonoxideDetector';
+import { ValveService } from './services/valveService';
 
 
 /**
@@ -69,6 +70,10 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
     {
       capabilities: ['switch', 'colorTemperature'],
       service: LightService,
+    },
+    {
+      capabilities: ['switch', 'valve'],
+      service: ValveService,
     },
     {
       capabilities: ['switch'],
