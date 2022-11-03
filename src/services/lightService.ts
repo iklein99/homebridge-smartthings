@@ -17,7 +17,8 @@ export class LightService extends BaseService {
       .onGet(this.getSwitchState.bind(this))
       .onSet(this.setSwitchState.bind(this));
 
-    if (accessory.context.device.components[0].capabilities.find(c => c.id === 'switchLevel')) {
+    // if (accessory.context.device.components[0].capabilities.find(c => c.id === 'switchLevel')) {
+    if (this.findCapability('switchLevel')) {
       this.log.debug(`${this.name} supports switchLevel`);
       this.service.getCharacteristic(platform.Characteristic.Brightness)
         .onSet(this.setLevel.bind(this))
@@ -25,7 +26,8 @@ export class LightService extends BaseService {
     }
 
     // If this bulb supports colorTemperature, then add those handlers
-    if (accessory.context.device.components[0].capabilities.find(c => c.id === 'colorTemperature')) {
+    // if (accessory.context.device.components[0].capabilities.find(c => c.id === 'colorTemperature')) {
+    if (this.findCapability('colorTemperature')) {
       this.log.debug(`${this.name} supports colorTemperature`);
       this.service.getCharacteristic(platform.Characteristic.ColorTemperature)
         .onSet(this.setColorTemp.bind(this))
@@ -33,7 +35,8 @@ export class LightService extends BaseService {
     }
 
     // If we support color control...
-    if (accessory.context.device.components[0].capabilities.find(c => c.id === 'colorControl')) {
+    //if (accessory.context.device.components[0].capabilities.find(c => c.id === 'colorControl')) {
+    if (this.findCapability('colorControl')) {
       this.log.debug(`${this.name} supports colorControl`);
       this.service.getCharacteristic(platform.Characteristic.Hue)
         .onSet(this.setHue.bind(this))

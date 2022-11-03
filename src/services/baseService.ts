@@ -24,6 +24,16 @@ export class BaseService {
     this.service = new platform.Service.Switch;  // Placeholder
   }
 
+  protected findCapability(capabilityToFind: string): boolean {
+    let component;
+    component = this.accessory.context.device.components.find(c => c.id === 'main');
+    if (component === undefined) {
+      component = this.accessory.context.device.components[0];
+    }
+
+    return component.capabilities.find(c => c.id === capabilityToFind);
+  }
+
   protected setServiceType(serviceType: WithUUID<typeof Service>) {
     this.service = this.accessory.getService(serviceType) ||
     this.accessory.addService(serviceType);
