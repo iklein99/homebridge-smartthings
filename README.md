@@ -13,6 +13,10 @@ This is yet another smartthings plugin for Homebridge.  This requires no access 
 require a lot of work to install.  It will discover devices automatically as well as unregister devices that are removed
 from your smarttthings network.  This is currently under development.
 
+## Fixed in 1.4.13
+* Support for certain multi-component accessories
+* Fixed fan support for fans that don't support SwitchLevel
+
 ## New in 1.4.12
 * Support for CO detector
 * Support for Valves (as irrigation valves)
