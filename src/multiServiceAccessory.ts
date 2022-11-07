@@ -52,6 +52,7 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
     'illuminanceMeasurement': LightSensorService,
     'contactSensor': ContactSensorService,
     'battery': BatteryService,
+    'valve': ValveService,
   };
 
   // Maps combinations of supported capabilities to a service
