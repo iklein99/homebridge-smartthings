@@ -11,7 +11,7 @@ export class FanSwitchLevelService extends BaseService {
     this.setServiceType(platform.Service.Fan);
 
     // Set the event handlers
-    this.log.debug(`Adding FanService to ${this.name}`);
+    this.log.debug(`Adding FanSwitchLevelService to ${this.name}`);
     this.service.getCharacteristic(platform.Characteristic.On)
       .onGet(this.getSwitchState.bind(this))
       .onSet(this.setSwitchState.bind(this));

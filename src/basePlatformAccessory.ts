@@ -169,7 +169,11 @@ export abstract class BasePlatformAccessory {
       this.axInstance.post(this.commandURL, commandBody).then(() => {
         this.log.debug(`${command} successful for ${this.name}`);
         this.deviceStatus.timestamp = 0; // Force a refresh on next poll after a state change
-        resolve(true);
+        // One second delay to avoid a refresh without new value
+        setTimeout(() => {
+          resolve(true);
+        }, 1000);
+        // resolve(true);
       }).catch((error) => {
         this.log.error(`${command} failed for ${this.name}: ${error}`);
         resolve(false);
