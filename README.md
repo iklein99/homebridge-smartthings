@@ -15,6 +15,7 @@ from your smarttthings network.  This is currently under development.
 
 ## Fixed in 1.4.14
 * Fixed an issue where a valve wasn't detected unless it has a switch capability
+* Fixed issue where switches and other items momentarily switch back to previous state when activated.
 
 ## Fixed in 1.4.13
 * Support for certain multi-component accessories

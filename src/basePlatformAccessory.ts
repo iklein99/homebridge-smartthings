@@ -36,6 +36,7 @@ export abstract class BasePlatformAccessory {
   protected deviceStatus: DeviceStatus = { timestamp: 0, status: undefined };
   protected failureCount = 0;
   protected giveUpTime = 0;
+  protected commandInProgress = false;
 
   constructor(
     platform: IKHomeBridgeHomebridgePlatform,
@@ -117,13 +118,22 @@ export abstract class BasePlatformAccessory {
     getTargetState?: () => Promise<CharacteristicValue>) {
     if (pollSeconds > 0) {
       setInterval(() => {
+        if (this.commandInProgress) {
+          // Skip polling until command is complete
+          this.log.debug(`Command in progress, skipping polling for ${this.name}`);
+          return;
+        }
         if (this.online) {
+          this.log.debug(`${this.name} polling...`);
+          this.commandInProgress = true;
           getValue().then((v) => {
-            this.log.debug(`${this.name} polling...`);
             service.updateCharacteristic(chracteristic, v);
+            this.log.debug(`${this.name} value updated.`);
           }).catch(() => {  // If we get an error, ignore
             this.log.warn(`Poll failure on ${this.name}`);
             return;
+          }).finally(() => {
+            this.commandInProgress = false;
           });
           // Update target if we have to
           if (targetStateCharacteristic && getTargetState) {
@@ -166,18 +176,38 @@ export abstract class BasePlatformAccessory {
 
     const commandBody = JSON.stringify([cmd]);
     return new Promise((resolve) => {
-      this.axInstance.post(this.commandURL, commandBody).then(() => {
-        this.log.debug(`${command} successful for ${this.name}`);
-        this.deviceStatus.timestamp = 0; // Force a refresh on next poll after a state change
-        // One second delay to avoid a refresh without new value
-        setTimeout(() => {
+      this.waitFor(() => !this.commandInProgress).then(() => {
+        this.commandInProgress = true;
+        this.axInstance.post(this.commandURL, commandBody).then(() => {
+          this.log.debug(`${command} successful for ${this.name}`);
+          this.deviceStatus.timestamp = 0; // Force a refresh on next poll after a state change
+          this.commandInProgress = false;
           resolve(true);
-        }, 1000);
-        // resolve(true);
-      }).catch((error) => {
-        this.log.error(`${command} failed for ${this.name}: ${error}`);
-        resolve(false);
+        }).catch((error) => {
+          this.commandInProgress = false;
+          this.log.error(`${command} failed for ${this.name}: ${error}`);
+          resolve(false);
+        });
       });
+    });
+  }
+
+  // Wait for the condition to be true.  Will check every 500 ms
+  private async waitFor(condition): Promise<void> {
+    if (condition()) {
+      return;
+    }
+
+    this.log.debug(`${this.name} command is waiting.`);
+    return new Promise(resolve => {
+      const interval = setInterval(() => {
+        if (condition()) {
+          this.log.debug(`${this.name} command is proceeding.`);
+          clearInterval(interval);
+          resolve();
+        }
+        this.log.debug(`${this.name} still waiting...`);
+      }, 250);
     });
   }
 }
