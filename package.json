@@ -2,7 +2,7 @@
   "private": false,
   "displayName": "SmartThings Plugin",
   "name": "homebridge-smartthings-ik",
-  "version": "1.4.14",
+  "version": "1.4.15",
   "description": "Connects SmartThings devices to Homebridge.  Automatically discovers devices.",
   "license": "Apache-2.0",
   "repository": {
