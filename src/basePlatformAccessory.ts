@@ -37,6 +37,7 @@ export abstract class BasePlatformAccessory {
   protected failureCount = 0;
   protected giveUpTime = 0;
   protected commandInProgress = false;
+  protected lastCommandCompleted = 0;
 
   constructor(
     platform: IKHomeBridgeHomebridgePlatform,
@@ -87,25 +88,27 @@ export abstract class BasePlatformAccessory {
       if ((this.deviceStatus.status === undefined) || (Date.now() - this.deviceStatus.timestamp > 5000)) {
         this.log.debug(`Calling Smartthings to get an update for ${this.name}`);
         this.failureCount = 0;
-        this.axInstance.get(this.statusURL).then((res) => {
-          if (res.data.components.main !== undefined) {
-            this.deviceStatus.status = res.data.components.main;
-            this.deviceStatus.timestamp = Date.now();
-            this.log.debug(`Updated status for ${this.name}: ${JSON.stringify(this.deviceStatus.status)}`);
-            resolve(true);
-          } else {
-            this.log.debug(`No status returned for ${this.name}`);
+        this.waitFor(() => this.commandInProgress === false).then(() => {
+          this.axInstance.get(this.statusURL).then((res) => {
+            if (res.data.components.main !== undefined) {
+              this.deviceStatus.status = res.data.components.main;
+              this.deviceStatus.timestamp = Date.now();
+              this.log.debug(`Updated status for ${this.name}: ${JSON.stringify(this.deviceStatus.status)}`);
+              resolve(true);
+            } else {
+              this.log.debug(`No status returned for ${this.name}`);
+              resolve(false);
+            }
+          }).catch(error => {
+            this.failureCount++;
+            this.log.error(`Failed to request status from ${this.name}: ${error}.  This is failure number ${this.failureCount}`);
+            if (this.failureCount >= 5) {
+              this.log.error(`Exceeded allowed failures for ${this.name}.  Device is offline`);
+              this.giveUpTime = Date.now();
+              this.online = false;
+            }
             resolve(false);
-          }
-        }).catch(error => {
-          this.failureCount++;
-          this.log.error(`Failed to request status from ${this.name}: ${error}.  This is failure number ${this.failureCount}`);
-          if (this.failureCount >= 5) {
-            this.log.error(`Exceeded allowed failures for ${this.name}.  Device is offline`);
-            this.giveUpTime = Date.now();
-            this.online = false;
-          }
-          resolve(false);
+          });
         });
       } else {
         resolve(true);
@@ -118,22 +121,21 @@ export abstract class BasePlatformAccessory {
     getTargetState?: () => Promise<CharacteristicValue>) {
     if (pollSeconds > 0) {
       setInterval(() => {
-        if (this.commandInProgress) {
+        // If we are in the middle of a commmand call, or it hasn't been at least 10 seconds, we don't want to poll.
+        if (this.commandInProgress || Date.now() - this.lastCommandCompleted < 20 * 1000) {
           // Skip polling until command is complete
           this.log.debug(`Command in progress, skipping polling for ${this.name}`);
           return;
         }
         if (this.online) {
           this.log.debug(`${this.name} polling...`);
-          this.commandInProgress = true;
+          // this.commandInProgress = true;
           getValue().then((v) => {
             service.updateCharacteristic(chracteristic, v);
             this.log.debug(`${this.name} value updated.`);
           }).catch(() => {  // If we get an error, ignore
             this.log.warn(`Poll failure on ${this.name}`);
             return;
-          }).finally(() => {
-            this.commandInProgress = false;
           });
           // Update target if we have to
           if (targetStateCharacteristic && getTargetState) {
@@ -181,8 +183,12 @@ export abstract class BasePlatformAccessory {
         this.axInstance.post(this.commandURL, commandBody).then(() => {
           this.log.debug(`${command} successful for ${this.name}`);
           this.deviceStatus.timestamp = 0; // Force a refresh on next poll after a state change
-          this.commandInProgress = false;
-          resolve(true);
+          // Force a small delay so that status fetch is correct
+          setTimeout(() => {
+            this.log.debug(`Delay complete for ${this.name}`);
+            this.commandInProgress = false;
+            resolve(true);
+          }, 1500);
         }).catch((error) => {
           this.commandInProgress = false;
           this.log.error(`${command} failed for ${this.name}: ${error}`);
@@ -193,7 +199,7 @@ export abstract class BasePlatformAccessory {
   }
 
   // Wait for the condition to be true.  Will check every 500 ms
-  private async waitFor(condition): Promise<void> {
+  private async waitFor(condition: () => boolean): Promise<void> {
     if (condition()) {
       return;
     }

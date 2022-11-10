@@ -13,6 +13,9 @@ This is yet another smartthings plugin for Homebridge.  This requires no access 
 require a lot of work to install.  It will discover devices automatically as well as unregister devices that are removed
 from your smarttthings network.  This is currently under development.
 
+## Fixed in 1.4.15
+* Improvements to timing issued resulting in switch status flip flopping after a command is sent.
+
 ## Fixed in 1.4.14
 * Fixed an issue where a valve wasn't detected unless it has a switch capability
 * Fixed issue where switches and other items momentarily switch back to previous state when activated.
