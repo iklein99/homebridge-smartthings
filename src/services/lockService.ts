@@ -116,9 +116,11 @@ export class LockService extends BaseService {
     this.log.debug(`Event updating lock capability for ${this.name} to ${event.value}`);
     this.service.updateCharacteristic(this.platform.Characteristic.LockCurrentState, this.mapLockState(event.value));
     if (event.value === 'locked') {
-      this.setLockTargetState(this.platform.Characteristic.LockTargetState.SECURED);
+      this.targetState = this.platform.Characteristic.LockTargetState.SECURED;
+      this.service.updateCharacteristic(this.platform.Characteristic.LockTargetState, this.targetState);
     } else {
-      this.setLockTargetState(this.platform.Characteristic.LockTargetState.UNSECURED);
+      this.targetState = this.platform.Characteristic.LockTargetState.UNSECURED;
+      this.service.updateCharacteristic(this.platform.Characteristic.LockTargetState, this.targetState);
     }
   }
 

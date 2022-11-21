@@ -2,6 +2,7 @@ import { PlatformAccessory, CharacteristicValue } from 'homebridge';
 import { IKHomeBridgeHomebridgePlatform } from '../platform';
 import { BaseService } from './baseService';
 import { MultiServiceAccessory } from '../multiServiceAccessory';
+import { ShortEvent } from 'smartthings-webhook/dist/requestResponse';
 
 export class DoorService extends BaseService {
   private targetState = this.platform.Characteristic.TargetDoorState.OPEN;
@@ -115,28 +116,36 @@ export class DoorService extends BaseService {
           const doorState = this.deviceStatus.status.doorControl.door.value;
           this.log.debug(`DoorState value from ${this.name}: ${doorState}`);
 
-          switch (doorState) {
-            case 'closed':
-              resolve(this.platform.Characteristic.CurrentDoorState.CLOSED);
-              break;
-            case 'closing':
-              resolve(this.platform.Characteristic.CurrentDoorState.CLOSING);
-              break;
-            case 'open':
-              resolve(this.platform.Characteristic.CurrentDoorState.OPEN);
-              break;
-            case 'opening':
-              resolve(this.platform.Characteristic.CurrentDoorState.OPENING);
-              break;
-            default: {
-              this.log.error(`Unsupported door state ${doorState} for ${this.name}`);
-              reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
-            }
-          }
+          resolve(this.mapDoorState(doorState));
         } else {
           reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         }
       });
     });
+  }
+
+  public processEvent(event: ShortEvent): void {
+    this.service.updateCharacteristic(this.platform.Characteristic.CurrentDoorState, this.mapDoorState(event.value));
+    if (event.value === 'closed' || event.value === 'closing') {
+      this.service.updateCharacteristic(this.platform.Characteristic.TargetDoorState, this.platform.Characteristic.TargetDoorState.CLOSED);
+    } else {
+      this.service.updateCharacteristic(this.platform.Characteristic.TargetDoorState, this.platform.Characteristic.TargetDoorState.OPEN);
+    }
+  }
+
+  private mapDoorState(doorState: string): CharacteristicValue {
+    switch (doorState) {
+      case 'closed':
+        return(this.platform.Characteristic.CurrentDoorState.CLOSED);
+      case 'closing':
+        return(this.platform.Characteristic.CurrentDoorState.CLOSING);
+      case 'open':
+        return(this.platform.Characteristic.CurrentDoorState.OPEN);
+      case 'opening':
+        return(this.platform.Characteristic.CurrentDoorState.OPENING);
+      default: {
+        return(this.platform.Characteristic.CurrentDoorState.CLOSED);
+      }
+    }
   }
 }
