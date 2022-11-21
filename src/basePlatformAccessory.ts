@@ -1,6 +1,7 @@
 import { PlatformAccessory, Logger, API, Characteristic, CharacteristicValue, Service, WithUUID } from 'homebridge';
 import axios = require('axios');
 import { IKHomeBridgeHomebridgePlatform } from './platform';
+import { ShortEvent } from 'smartthings-webhook/dist/requestResponse';
 
 type DeviceStatus = {
   timestamp: number;
@@ -22,7 +23,7 @@ export abstract class BasePlatformAccessory {
 
   protected accessory: PlatformAccessory;
   protected platform: IKHomeBridgeHomebridgePlatform;
-  protected name: string;
+  public readonly name: string;
   protected characteristic: typeof Characteristic;
   protected log: Logger;
   protected baseURL: string;
@@ -36,6 +37,10 @@ export abstract class BasePlatformAccessory {
   protected deviceStatus: DeviceStatus = { timestamp: 0, status: undefined };
   protected failureCount = 0;
   protected giveUpTime = 0;
+
+  get id() {
+    return this.accessory.UUID;
+  }
 
   constructor(
     platform: IKHomeBridgeHomebridgePlatform,
@@ -75,7 +80,13 @@ export abstract class BasePlatformAccessory {
           this.online = false;
         }
       });
+    // if (this.name === 'Test Lock') {
+    //   platform.subscriptionHandler.addSubscription(this);
+    // }
   }
+
+  public abstract processEvent(event: ShortEvent):void;
+
 
   // Called by subclasses to refresh the status for the device.  Will only refresh if it has been more than
   // 4 seconds since last refresh

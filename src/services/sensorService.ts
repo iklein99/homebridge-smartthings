@@ -2,21 +2,26 @@ import { PlatformAccessory, CharacteristicValue, WithUUID, Characteristic, Servi
 import { IKHomeBridgeHomebridgePlatform } from '../platform';
 import { BaseService } from './baseService';
 import { MultiServiceAccessory } from '../multiServiceAccessory';
+//import { ShortEvent } from 'smartthings-webhook/dist/requestResponse';
 
 export abstract class SensorService extends BaseService {
   statusTranslation: (status) => CharacteristicValue | null = ()=> {
     return null;
   };
 
-  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, multiServiceAccessory: MultiServiceAccessory,
+  characteristic: WithUUID<new () => Characteristic>|undefined;
+
+  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[],
+    multiServiceAccessory: MultiServiceAccessory,
     name: string, deviceStatus) {
-    super(platform, accessory, multiServiceAccessory, name, deviceStatus);
+    super(platform, accessory, capabilities, multiServiceAccessory, name, deviceStatus);
   }
 
   protected initService(sensorService: WithUUID<typeof Service>, sensorCharacteristic: WithUUID<new () => Characteristic>,
     statusTranslation: (status) => CharacteristicValue) {
     this.statusTranslation = statusTranslation;
     this.setServiceType(sensorService);
+    this.characteristic = sensorCharacteristic;
 
     // Set the event handlers
     this.service.getCharacteristic(sensorCharacteristic)
@@ -34,7 +39,7 @@ export abstract class SensorService extends BaseService {
 
   }
 
-  // Get the current state of the lock
+  // Get the current state of the sensor
   async getSensorState(): Promise<CharacteristicValue> {
     // if you need to return an error to show the device as "Not Responding" in the Home app:
     // throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
@@ -60,4 +65,12 @@ export abstract class SensorService extends BaseService {
       });
     });
   }
+
+  // public processEvent(event: ShortEvent) {
+  //   const value = this.statusTranslation(event.value);
+  //   if (this.characteristic && value) {
+  //     this.log.debug(`Updating value of ${this.name} from event to ${value}`);
+  //     this.service.updateCharacteristic(this.characteristic, value);
+  //   }
+  // }
 }

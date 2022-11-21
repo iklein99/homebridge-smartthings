@@ -7,9 +7,10 @@ export class LockService extends BaseService {
   private targetState = 0;
   private lockInTransitionStart = 0;
 
-  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, multiServiceAccessory: MultiServiceAccessory,
+  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[],
+    multiServiceAccessory: MultiServiceAccessory,
     name: string, deviceStatus) {
-    super(platform, accessory, multiServiceAccessory, name, deviceStatus);
+    super(platform, accessory, capabilities, multiServiceAccessory, name, deviceStatus);
 
     this.setServiceType(platform.Service.LockMechanism);
     // Set the event handlers

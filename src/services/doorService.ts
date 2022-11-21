@@ -7,11 +7,12 @@ export class DoorService extends BaseService {
   private targetState = this.platform.Characteristic.TargetDoorState.OPEN;
   private doorInTransitionStart = 0;
 
-  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, multiServiceAccessory: MultiServiceAccessory,
+  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[],
+    multiServiceAccessory: MultiServiceAccessory,
     name: string, deviceStatus) {
     // This can either be a Door or Garage Door Opener
 
-    super(platform, accessory, multiServiceAccessory, name, deviceStatus);
+    super(platform, accessory, capabilities, multiServiceAccessory, name, deviceStatus);
     this.setServiceType(platform.Service.GarageDoorOpener);
     // Set the event handlers
     this.log.debug(`Adding DoorService to ${this.name}`);

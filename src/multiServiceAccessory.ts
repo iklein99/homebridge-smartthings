@@ -19,6 +19,7 @@ import { LeakDetectorService } from './services/leakDetector';
 import { SmokeDetectorService } from './services/smokeDetector';
 import { CarbonMonoxideDetectorService } from './services/carbonMonoxideDetector';
 import { ValveService } from './services/valveService';
+import { ShortEvent } from 'smartthings-webhook/dist/requestResponse';
 
 
 /**
@@ -42,7 +43,7 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
     'lock': LockService,
     // 'switch': SwitchService,
     'motionSensor': MotionService,
-    'waterSensor' : LeakDetectorService,
+    'waterSensor': LeakDetectorService,
     'smokeDetector': SmokeDetectorService,
     'carbonMonoxideDetector': CarbonMonoxideDetectorService,
     'presenceSensor': OccupancySensorService,
@@ -96,7 +97,7 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
     Object.keys(MultiServiceAccessory.capabilityMap).forEach((capability) => {
       if (capabilities.find((c) => c.id === capability)) {
         this.services.push(new (
-          MultiServiceAccessory.capabilityMap[capability])(this.platform, this.accessory, this, this.name, this.deviceStatus,
+          MultiServiceAccessory.capabilityMap[capability])(this.platform, this.accessory, [capability], this, this.name, this.deviceStatus,
         ));
       }
     });
@@ -105,7 +106,7 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
       if (service === undefined) {
         service = SwitchService;
       }
-      this.services.push(new service(this.platform, this.accessory, this, this.name, this.deviceStatus));
+      this.services.push(new service(this.platform, this.accessory, capabilities.map(c => c.id), this, this.name, this.deviceStatus));
     }
   }
 
@@ -154,6 +155,17 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
     chracteristic: WithUUID<new () => Characteristic>, targetStateCharacteristic?: WithUUID<new () => Characteristic>,
     getTargetState?: () => Promise<CharacteristicValue>) {
     return super.startPollingState(pollSeconds, getValue, service, chracteristic, targetStateCharacteristic, getTargetState);
+  }
+
+  public processEvent(event: ShortEvent): void {
+    this.log.debug(`Received events for ${this.name}`);
+
+    const service = this.services.find(s => s.capabilities.find(c => c === event.capability));
+
+    if (service) {
+      service.processEvent(event);
+    }
+
   }
 
 }

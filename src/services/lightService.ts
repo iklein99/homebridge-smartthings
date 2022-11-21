@@ -2,12 +2,14 @@ import { PlatformAccessory, CharacteristicValue } from 'homebridge';
 import { IKHomeBridgeHomebridgePlatform } from '../platform';
 import { BaseService } from './baseService';
 import { MultiServiceAccessory } from '../multiServiceAccessory';
+import { ShortEvent } from 'smartthings-webhook/dist/requestResponse';
 
 export class LightService extends BaseService {
 
-  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, multiServiceAccessory: MultiServiceAccessory,
+  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[],
+    multiServiceAccessory: MultiServiceAccessory,
     name: string, deviceStatus) {
-    super(platform, accessory, multiServiceAccessory, name, deviceStatus);
+    super(platform, accessory, capabilities, multiServiceAccessory, name, deviceStatus);
 
     this.setServiceType(platform.Service.Lightbulb);
 
@@ -256,6 +258,44 @@ export class LightService extends BaseService {
         reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       });
     });
+  }
+
+  public processEvent(event: ShortEvent): void {
+    switch(event.capability) {
+      case 'switch': {
+        this.log.debug(`Event updating switch capability for ${this.name} to ${event.value}`);
+        this.service.updateCharacteristic(this.platform.Characteristic.On, event.value === 'on');
+        return;
+      }
+
+      case 'switchLevel': {
+        this.log.debug(`Event updating switchLevel capability for ${this.name} to ${event.value}`);
+        this.service.updateCharacteristic(this.platform.Characteristic.Brightness, event.value);
+        return;
+      }
+
+      case 'colorTemperature': {
+        this.log.debug(`Event updating colorTemperature capability for ${this.name} to ${event.value}`);
+        const stTemperature = Math.min(this.deviceStatus.status.colorTemperature.colorTemperature.value, 6500);
+        this.log.debug('getColorTemperature() SUCCESSFUL for ' + this.name + '. value = ' + stTemperature);
+        // Convert number to the homebridge compatible value
+        const hbTemperature = 500 - ((stTemperature / 6500) * 360);
+        this.service.updateCharacteristic(this.platform.Characteristic.ColorTemperature, hbTemperature);
+        return;
+      }
+
+      case 'colorControl': {
+        this.log.debug(`Event for colorControl, attribute is ${event.attribute}, value is ${event.value}`);
+        if (event.attribute === 'hue') {
+          const hueArc = Math.round((event.value / 100) * 360);
+          this.service.updateCharacteristic(this.platform.Characteristic.Hue, hueArc);
+        }
+        else if (event.attribute === 'saturation') {
+          this.service.updateCharacteristic(this.platform.Characteristic.Saturation, event.value);
+        }
+      }
+
+    }
   }
 
 }

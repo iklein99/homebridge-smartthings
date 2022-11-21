@@ -2,12 +2,14 @@ import { PlatformAccessory, CharacteristicValue } from 'homebridge';
 import { IKHomeBridgeHomebridgePlatform } from '../platform';
 import { BaseService } from './baseService';
 import { MultiServiceAccessory } from '../multiServiceAccessory';
+import { ShortEvent } from 'smartthings-webhook/dist/requestResponse';
 
 export class FanService extends BaseService {
 
-  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, multiServiceAccessory: MultiServiceAccessory,
+  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilitites: string[],
+    multiServiceAccessory: MultiServiceAccessory,
     name: string, deviceStatus) {
-    super(platform, accessory, multiServiceAccessory, name, deviceStatus);
+    super(platform, accessory, capabilitites, multiServiceAccessory, name, deviceStatus);
     this.setServiceType(platform.Service.Fan);
 
     // Set the event handlers
@@ -117,5 +119,20 @@ export class FanService extends BaseService {
         }
       });
     });
+  }
+
+  public processEvent(event: ShortEvent): void {
+    switch (event.capability) {
+      case 'switch': {
+        this.log.debug(`Event updating switch capability for ${this.name} to ${event.value}`);
+        this.service.updateCharacteristic(this.platform.Characteristic.On, event.value === 'on');
+        return;
+      }
+
+      case 'switchLevel': {
+        this.log.debug(`Event updating switchLevel capability for ${this.name} to ${event.value}`);
+        this.service.updateCharacteristic(this.platform.Characteristic.RotationSpeed, event.value);
+      }
+    }
   }
 }

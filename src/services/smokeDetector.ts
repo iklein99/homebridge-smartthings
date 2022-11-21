@@ -5,10 +5,11 @@ import { SensorService } from './sensorService';
 
 export class SmokeDetectorService extends SensorService {
 
-  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, multiServiceAccessory: MultiServiceAccessory,
+  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[],
+    multiServiceAccessory: MultiServiceAccessory,
     name: string, deviceStatus) {
 
-    super(platform, accessory, multiServiceAccessory, name, deviceStatus);
+    super(platform, accessory, capabilities, multiServiceAccessory, name, deviceStatus);
 
     this.initService(platform.Service.SmokeSensor,
       platform.Characteristic.SmokeDetected,

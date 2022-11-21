@@ -1,4 +1,5 @@
 import { PlatformAccessory, Logger, Service, WithUUID } from 'homebridge';
+import { ShortEvent } from 'smartthings-webhook/dist/requestResponse';
 import { MultiServiceAccessory } from '../multiServiceAccessory';
 //import { BasePlatformAccessory } from '../basePlatformAccessory';
 import { IKHomeBridgeHomebridgePlatform } from '../platform';
@@ -11,9 +12,12 @@ export class BaseService {
   protected deviceStatus;
   protected multiServiceAccessory: MultiServiceAccessory;
   protected service: Service;
+  public capabilities: string[];
 
-  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, multiServiceAccessory:MultiServiceAccessory,
+  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[],
+    multiServiceAccessory:MultiServiceAccessory,
     name: string, deviceStatus) {
+    this.capabilities = capabilities;
     this.accessory = accessory;
     // this.service = this.accessory.getService(platform.Service.MotionSensor) || this.accessory.addService(platform.Service.MotionSensor);
     this.platform = platform;
@@ -60,5 +64,9 @@ export class BaseService {
           }
         });
     });
+  }
+
+  public processEvent(event: ShortEvent) {
+    this.log.debug(`${this.name} Received event with value ${event.value} - not implemented yet`);
   }
 }

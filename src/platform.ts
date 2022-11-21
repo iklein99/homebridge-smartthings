@@ -4,6 +4,7 @@ import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import axios = require('axios');
 import { BasePlatformAccessory } from './basePlatformAccessory';
 import { MultiServiceAccessory } from './multiServiceAccessory';
+import { SubscriptionHandler } from './webhook/subscriptionHandler';
 
 /**
  * HomebridgePlatform
@@ -29,6 +30,8 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
     headers: this.headerDict,
   });
 
+  private accessoryObjects: BasePlatformAccessory[] = [];
+  private subscriptionHandler: SubscriptionHandler|undefined = undefined;
 
   constructor(
     public readonly log: Logger,
@@ -60,6 +63,10 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
         }
         this.discoverDevices(devices);
         this.unregisterDevices(devices);
+        // Start subscription service
+        this.subscriptionHandler = new SubscriptionHandler(this, this.accessoryObjects);
+        this.subscriptionHandler.startService();
+
       }).catch(reason => {
         this.log.error(`Could not load devices from Smartthings: ${reason}.  Check your configuration`);
       });
@@ -181,7 +188,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
 
           // create the accessory handler for the restored accessory
           // this is imported from `platformAccessory.ts`
-          this.createAccessoryObject(device, existingAccessory);
+          this.accessoryObjects.push(this.createAccessoryObject(device, existingAccessory));
 
           // it is possible to remove platform accessories at any time using `api.unregisterPlatformAccessories`, eg.:
           // remove platform accessories when no longer present
@@ -201,7 +208,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
           // create the accessory handler for the newly create accessory
           // this is imported from `platformAccessory.ts`
 
-          this.createAccessoryObject(device, accessory);
+          this.accessoryObjects.push(this.createAccessoryObject(device, accessory));
 
           // link the accessory to your platform
           this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);

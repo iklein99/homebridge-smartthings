@@ -5,9 +5,10 @@ import { MultiServiceAccessory } from '../multiServiceAccessory';
 
 export class ContactSensorService extends SensorService {
 
-  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, multiServiceAccessory: MultiServiceAccessory,
+  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[],
+    multiServiceAccessory: MultiServiceAccessory,
     name: string, deviceStatus) {
-    super(platform, accessory, multiServiceAccessory, name, deviceStatus);
+    super(platform, accessory, capabilities, multiServiceAccessory, name, deviceStatus);
 
     this.log.debug(`Adding ContactService to ${this.name}`);
     this.initService(platform.Service.ContactSensor, platform.Characteristic.ContactSensorState, (status) => {

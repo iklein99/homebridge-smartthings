@@ -6,10 +6,11 @@ import { SensorService } from './sensorService';
 export class CarbonMonoxideDetectorService extends SensorService {
   serviceName = 'CarbonMonixideDetector';
 
-  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, multiServiceAccessory: MultiServiceAccessory,
+  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[],
+    multiServiceAccessory: MultiServiceAccessory,
     name: string, deviceStatus) {
 
-    super(platform, accessory, multiServiceAccessory, name, deviceStatus);
+    super(platform, accessory, capabilities, multiServiceAccessory, name, deviceStatus);
 
     this.initService(platform.Service.CarbonMonoxideSensor,
       platform.Characteristic.CarbonMonoxideDetected,

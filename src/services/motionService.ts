@@ -2,12 +2,14 @@ import { PlatformAccessory } from 'homebridge';
 import { IKHomeBridgeHomebridgePlatform } from '../platform';
 import { MultiServiceAccessory } from '../multiServiceAccessory';
 import { SensorService } from './sensorService';
+import { ShortEvent } from 'smartthings-webhook/dist/requestResponse';
 
 export class MotionService extends SensorService {
 
-  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, multiServiceAccessory: MultiServiceAccessory,
+  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[],
+    multiServiceAccessory: MultiServiceAccessory,
     name: string, deviceStatus) {
-    super(platform, accessory, multiServiceAccessory, name, deviceStatus);
+    super(platform, accessory, capabilities, multiServiceAccessory, name, deviceStatus);
 
     this.log.debug(`Adding MotionService to ${this.name}`);
 
@@ -18,5 +20,10 @@ export class MotionService extends SensorService {
       }
       return status.motionSensor.motion.value === 'active' ? true : false;
     });
+  }
+
+  public processEvent(event: ShortEvent): void {
+    this.log.debug(`Updating ${this.name} from evnent to ${event.value}`);
+    this.service.updateCharacteristic(this.platform.Characteristic.MotionDetected, event.value === 'active' ? true : false);
   }
 }
