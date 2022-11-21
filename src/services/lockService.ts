@@ -2,6 +2,7 @@ import { PlatformAccessory, CharacteristicValue } from 'homebridge';
 import { IKHomeBridgeHomebridgePlatform } from '../platform';
 import { BaseService } from './baseService';
 import { MultiServiceAccessory } from '../multiServiceAccessory';
+import { ShortEvent } from 'smartthings-webhook/dist/requestResponse';
 
 export class LockService extends BaseService {
   private targetState = 0;
@@ -103,25 +104,37 @@ export class LockService extends BaseService {
         if (success) {
           const lockState = this.deviceStatus.status.lock.lock.value;
           this.log.debug(`LockState value from ${this.name}: ${lockState}`);
-
-          switch (lockState) {
-            case 'locked': {
-              resolve(this.platform.Characteristic.LockCurrentState.SECURED);
-              break;
-            }
-            case 'unlocked':
-            case 'unlocked with timeout': {
-              resolve(this.platform.Characteristic.LockCurrentState.UNSECURED);
-              break;
-            }
-            default: {
-              resolve(this.platform.Characteristic.LockCurrentState.UNKNOWN);
-            }
-          }
+          resolve(this.mapLockState(lockState));
         } else {
           reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         }
       });
     });
+  }
+
+  public processEvent(event: ShortEvent): void {
+    this.log.debug(`Event updating lock capability for ${this.name} to ${event.value}`);
+    this.service.updateCharacteristic(this.platform.Characteristic.LockCurrentState, this.mapLockState(event.value));
+    if (event.value === 'locked') {
+      this.setLockTargetState(this.platform.Characteristic.LockTargetState.SECURED);
+    } else {
+      this.setLockTargetState(this.platform.Characteristic.LockTargetState.UNSECURED);
+    }
+  }
+
+  public mapLockState(lockState:string): CharacteristicValue {
+    switch (lockState) {
+      case 'locked': {
+        return(this.platform.Characteristic.LockCurrentState.SECURED);
+      }
+      case 'unlocked':
+      case 'unlocked with timeout': {
+        return(this.platform.Characteristic.LockCurrentState.UNSECURED);
+      }
+      default: {
+        return(this.platform.Characteristic.LockCurrentState.UNKNOWN);
+      }
+    }
+
   }
 }

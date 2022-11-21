@@ -194,12 +194,14 @@ export abstract class BasePlatformAccessory {
         this.axInstance.post(this.commandURL, commandBody).then(() => {
           this.log.debug(`${command} successful for ${this.name}`);
           this.deviceStatus.timestamp = 0; // Force a refresh on next poll after a state change
+          this.commandInProgress = false;
+          resolve(true);
           // Force a small delay so that status fetch is correct
-          setTimeout(() => {
-            this.log.debug(`Delay complete for ${this.name}`);
-            this.commandInProgress = false;
-            resolve(true);
-          }, 1500);
+          // setTimeout(() => {
+          //   this.log.debug(`Delay complete for ${this.name}`);
+          //   this.commandInProgress = false;
+          //   resolve(true);
+          // }, 1500);
         }).catch((error) => {
           this.commandInProgress = false;
           this.log.error(`${command} failed for ${this.name}: ${error}`);
