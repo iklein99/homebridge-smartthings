@@ -13,13 +13,14 @@ import { LockService } from './services/lockService';
 import { DoorService } from './services/doorService';
 import { SwitchService } from './services/switchService';
 import { LightService } from './services/lightService';
-import { FanService } from './services/fanService';
+import { FanSwitchLevelService } from './services/fanSwitchLevelService';
 import { OccupancySensorService } from './services/occupancySensorService';
 import { LeakDetectorService } from './services/leakDetector';
 import { SmokeDetectorService } from './services/smokeDetector';
 import { CarbonMonoxideDetectorService } from './services/carbonMonoxideDetector';
 import { ValveService } from './services/valveService';
 import { ShortEvent } from 'smartthings-webhook/dist/requestResponse';
+import { FanSpeedService } from './services/fanSpeedService copy';
 
 
 /**
@@ -52,13 +53,18 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
     'illuminanceMeasurement': LightSensorService,
     'contactSensor': ContactSensorService,
     'battery': BatteryService,
+    'valve': ValveService,
   };
 
   // Maps combinations of supported capabilities to a service
   private static comboCapabilityMap = [
     {
+      capabilities: ['switch', 'fanSpeed', 'switchLevel'],
+      service: FanSwitchLevelService,
+    },
+    {
       capabilities: ['switch', 'fanSpeed'],
-      service: FanService,
+      service: FanSpeedService,
     },
     {
       capabilities: ['switch', 'switchLevel'],
