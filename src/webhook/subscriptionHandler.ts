@@ -2,31 +2,38 @@ import { RequestBody, ResponseBody } from 'smartthings-webhook/dist/requestRespo
 import axios = require('axios');
 import { BasePlatformAccessory } from '../basePlatformAccessory';
 import { IKHomeBridgeHomebridgePlatform } from '../platform';
-import { Logger } from 'homebridge';
+import { Logger, PlatformConfig } from 'homebridge';
 
-const ACCESS_TOKEN = 'Abc';
+
+//const ACCESS_TOKEN = ;
 const BASE_URL = 'https://stwh.kleinstudios.net/api/';
 export class SubscriptionHandler {
+  private config: PlatformConfig;
   private devices: BasePlatformAccessory[] = [];
   private deviceIds: string[] = [];
-  private headerDict = {
-    'Authorization': 'Bearer: ' + ACCESS_TOKEN,
-  };
 
   private log: Logger;
   private shutdown = false;
 
-  private axInstance = axios.default.create({
-    baseURL: BASE_URL,
-    headers: this.headerDict,
-  });
+  private axInstance: axios.AxiosInstance;
 
   constructor(platform: IKHomeBridgeHomebridgePlatform, devices: BasePlatformAccessory[]) {
+    this.config = platform.config;
     this.log = platform.log;
     devices.forEach((device) => {
       this.deviceIds.push(device.id);
     });
     this.devices = devices;
+
+    const headerDict = {
+      'Authorization': 'Bearer: ' + this.config.WebhookToken,
+    };
+
+    this.axInstance = axios.default.create({
+      baseURL: BASE_URL,
+      headers: headerDict,
+    });
+
   }
 
   async startService() {

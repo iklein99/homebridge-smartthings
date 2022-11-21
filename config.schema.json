@@ -23,6 +23,13 @@
         "required": true,
         "default": ""
       },
+      "WebhookToken": {
+        "title": "Webhook Token",
+        "type": "string",
+        "required": false,
+        "default": ""
+      },
+
       "GarageDoorMaxPoll": {
         "title": "Garage Door Max Poll",
         "type": "integer",
