@@ -2,6 +2,7 @@ import { PlatformAccessory } from 'homebridge';
 import { IKHomeBridgeHomebridgePlatform } from '../platform';
 import { SensorService } from './sensorService';
 import { MultiServiceAccessory } from '../multiServiceAccessory';
+import { ShortEvent } from '../webhook/subscriptionHandler';
 
 export class HumidityService extends SensorService {
 
@@ -18,5 +19,10 @@ export class HumidityService extends SensorService {
       }
       return status.relativeHumidityMeasurement.humidity.value;
     });
+  }
+
+  public processEvent(event: ShortEvent): void {
+    this.log.debug(`Event updating humidity sensor for ${this.name} to ${event.value}`);
+    this.service.updateCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity, event.value);
   }
 }

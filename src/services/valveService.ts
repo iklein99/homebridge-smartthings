@@ -2,6 +2,7 @@ import { PlatformAccessory, CharacteristicValue } from 'homebridge';
 import { IKHomeBridgeHomebridgePlatform } from '../platform';
 import { BaseService } from './baseService';
 import { MultiServiceAccessory } from '../multiServiceAccessory';
+import { ShortEvent } from '../webhook/subscriptionHandler';
 
 export class ValveService extends BaseService {
 
@@ -56,6 +57,12 @@ export class ValveService extends BaseService {
         this.log.error(`Command failed for ${this.name}`);
       }
     });
+  }
+
+  public processEvent(event: ShortEvent): void {
+    this.log.debug(`Event updating valve capability for ${this.name} to ${event.value}`);
+    this.service.updateCharacteristic(this.platform.Characteristic.Active,
+      event.value === 'open' ? this.platform.Characteristic.Active.ACTIVE : this.platform.Characteristic.Active.INACTIVE);
   }
 
 

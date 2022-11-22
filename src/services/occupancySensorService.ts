@@ -2,6 +2,7 @@ import { PlatformAccessory } from 'homebridge';
 import { IKHomeBridgeHomebridgePlatform } from '../platform';
 import { MultiServiceAccessory } from '../multiServiceAccessory';
 import { SensorService } from './sensorService';
+import { ShortEvent } from '../webhook/subscriptionHandler';
 
 export class OccupancySensorService extends SensorService {
 
@@ -19,5 +20,12 @@ export class OccupancySensorService extends SensorService {
       }
       return status.presenceSensor.presence.value === 'present' ? 1 : 0;
     });
+  }
+
+  public processEvent(event: ShortEvent): void {
+    this.log.debug(`Event updating occupancy (presence) for ${this.name} to ${event.value}`);
+    this.service.updateCharacteristic(
+      this.platform.Characteristic.OccupancyDetected,
+      event.value === 'present' ? 1 : 0);
   }
 }

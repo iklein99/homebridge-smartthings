@@ -2,6 +2,7 @@ import { PlatformAccessory } from 'homebridge';
 import { IKHomeBridgeHomebridgePlatform } from '../platform';
 import { MultiServiceAccessory } from '../multiServiceAccessory';
 import { SensorService } from './sensorService';
+import { ShortEvent } from '../webhook/subscriptionHandler';
 
 export class SmokeDetectorService extends SensorService {
 
@@ -24,5 +25,14 @@ export class SmokeDetectorService extends SensorService {
       });
 
     this.log.debug(`Adding SmokeDetector Service to ${this.name}`);
+  }
+
+  public processEvent(event: ShortEvent): void {
+    this.log.debug(`Event updating smoke detected for ${this.name} to ${event.value}`);
+    this.service.updateCharacteristic(
+      this.platform.Characteristic.SmokeDetected,
+      event.value === 'detected' ?
+        this.platform.Characteristic.SmokeDetected.SMOKE_DETECTED :
+        this.platform.Characteristic.SmokeDetected.SMOKE_NOT_DETECTED);
   }
 }
