@@ -2,7 +2,7 @@ import { PlatformAccessory } from 'homebridge';
 import { IKHomeBridgeHomebridgePlatform } from '../platform';
 import { MultiServiceAccessory } from '../multiServiceAccessory';
 import { SensorService } from './sensorService';
-import { ShortEvent } from 'smartthings-webhook/dist/requestResponse';
+import { ShortEvent } from '../webhook/subscriptionHandler';
 
 export class MotionService extends SensorService {
 

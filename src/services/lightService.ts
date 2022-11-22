@@ -2,7 +2,7 @@ import { PlatformAccessory, CharacteristicValue } from 'homebridge';
 import { IKHomeBridgeHomebridgePlatform } from '../platform';
 import { BaseService } from './baseService';
 import { MultiServiceAccessory } from '../multiServiceAccessory';
-import { ShortEvent } from 'smartthings-webhook/dist/requestResponse';
+import { ShortEvent } from '../webhook/subscriptionHandler';
 
 export class LightService extends BaseService {
 
@@ -289,8 +289,7 @@ export class LightService extends BaseService {
         if (event.attribute === 'hue') {
           const hueArc = Math.round((event.value / 100) * 360);
           this.service.updateCharacteristic(this.platform.Characteristic.Hue, hueArc);
-        }
-        else if (event.attribute === 'saturation') {
+        } else if (event.attribute === 'saturation') {
           this.service.updateCharacteristic(this.platform.Characteristic.Saturation, event.value);
         }
       }

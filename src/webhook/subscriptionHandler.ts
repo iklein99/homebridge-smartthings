@@ -1,9 +1,27 @@
-import { RequestBody, ResponseBody } from 'smartthings-webhook/dist/requestResponse';
+//import { RequestBody, ResponseBody } from '../webhook/subscriptionHandler;
 import axios = require('axios');
 import { BasePlatformAccessory } from '../basePlatformAccessory';
 import { IKHomeBridgeHomebridgePlatform } from '../platform';
 import { Logger, PlatformConfig } from 'homebridge';
-import { WEBHOOK_URL, WH_CONNECT_RETRY_MINUTES } from '../keyValues';
+import { WEBHOOK_URL, WH_CONNECT_RETRY_MINUTES, wait } from '../keyValues';
+
+export interface ShortEvent {
+  deviceId: string;
+  value: any;
+  componentId: string;
+  capability: string;
+  attribute: string;
+}
+
+export interface RequestBody {
+  timeout: number;
+  deviceIds: string[];
+}
+
+export interface ResponseBody {
+  timeout: boolean;
+  events: ShortEvent [];
+}
 
 export class SubscriptionHandler {
   private config: PlatformConfig;
@@ -58,15 +76,9 @@ export class SubscriptionHandler {
       } catch (error) {
         //this.shutdown = true;
         this.log.error(`Could not connect to web hook service: ${error}.  Will retry`);
-        await this.wait(WH_CONNECT_RETRY_MINUTES * 60  * 1000);
+        await wait(WH_CONNECT_RETRY_MINUTES * 60  * 1000);
       }
     }
-  }
-
-  async wait(seconds):Promise<void> {
-    return new Promise(resolve => {
-      setTimeout(() => resolve(), seconds * 1000);
-    });
   }
 
   stopService() {

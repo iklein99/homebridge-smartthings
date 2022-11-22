@@ -1,5 +1,5 @@
 import { PlatformAccessory, Logger, Service, WithUUID } from 'homebridge';
-import { ShortEvent } from 'smartthings-webhook/dist/requestResponse';
+import { ShortEvent } from '../webhook/subscriptionHandler';
 import { MultiServiceAccessory } from '../multiServiceAccessory';
 //import { BasePlatformAccessory } from '../basePlatformAccessory';
 import { IKHomeBridgeHomebridgePlatform } from '../platform';

@@ -19,7 +19,7 @@ import { LeakDetectorService } from './services/leakDetector';
 import { SmokeDetectorService } from './services/smokeDetector';
 import { CarbonMonoxideDetectorService } from './services/carbonMonoxideDetector';
 import { ValveService } from './services/valveService';
-import { ShortEvent } from 'smartthings-webhook/dist/requestResponse';
+import { ShortEvent } from './webhook/subscriptionHandler';
 import { FanSpeedService } from './services/fanSpeedService';
 
 

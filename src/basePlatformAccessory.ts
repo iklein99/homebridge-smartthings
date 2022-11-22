@@ -1,7 +1,7 @@
 import { PlatformAccessory, Logger, API, Characteristic, CharacteristicValue, Service, WithUUID } from 'homebridge';
 import axios = require('axios');
 import { IKHomeBridgeHomebridgePlatform } from './platform';
-import { ShortEvent } from 'smartthings-webhook/dist/requestResponse';
+import { ShortEvent } from './webhook/subscriptionHandler';
 
 type DeviceStatus = {
   timestamp: number;

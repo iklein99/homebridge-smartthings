@@ -2,7 +2,6 @@ import { PlatformAccessory, CharacteristicValue, WithUUID, Characteristic, Servi
 import { IKHomeBridgeHomebridgePlatform } from '../platform';
 import { BaseService } from './baseService';
 import { MultiServiceAccessory } from '../multiServiceAccessory';
-//import { ShortEvent } from 'smartthings-webhook/dist/requestResponse';
 
 export abstract class SensorService extends BaseService {
   statusTranslation: (status) => CharacteristicValue | null = ()=> {
