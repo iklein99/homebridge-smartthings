@@ -63,9 +63,11 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
         }
         this.discoverDevices(devices);
         this.unregisterDevices(devices);
-        // Start subscription service
-        this.subscriptionHandler = new SubscriptionHandler(this, this.accessoryObjects);
-        this.subscriptionHandler.startService();
+        // Start subscription service if we have a webhook token
+        if (config.WebhookToken && config.WebhookToken !== '') {
+          this.subscriptionHandler = new SubscriptionHandler(this, this.accessoryObjects);
+          this.subscriptionHandler.startService();
+        }
 
       }).catch(reason => {
         this.log.error(`Could not load devices from Smartthings: ${reason}.  Check your configuration`);
