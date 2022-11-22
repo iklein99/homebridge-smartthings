@@ -3,10 +3,8 @@ import axios = require('axios');
 import { BasePlatformAccessory } from '../basePlatformAccessory';
 import { IKHomeBridgeHomebridgePlatform } from '../platform';
 import { Logger, PlatformConfig } from 'homebridge';
+import { WEBHOOK_URL, WH_CONNECT_RETRY_MINUTES } from '../keyValues';
 
-
-//const ACCESS_TOKEN = ;
-const BASE_URL = 'https://stwh.kleinstudios.net/api/';
 export class SubscriptionHandler {
   private config: PlatformConfig;
   private devices: BasePlatformAccessory[] = [];
@@ -30,7 +28,7 @@ export class SubscriptionHandler {
     };
 
     this.axInstance = axios.default.create({
-      baseURL: BASE_URL,
+      baseURL: WEBHOOK_URL,
       headers: headerDict,
     });
 
@@ -46,16 +44,29 @@ export class SubscriptionHandler {
 
     while (!this.shutdown) {
       this.log.debug('Posting request to web hook');
-      const response = await this.axInstance.post('clientrequest', request);
-      this.log.debug(`Received response from webhook ${JSON.stringify(response.data)}`);
-      const responseBody = response.data as ResponseBody;
-      responseBody.events.forEach(event => {
-        const device = this.devices.find(device => device.id === event.deviceId);
-        if (device) {
-          device.processEvent(event);
-        }
-      });
+      let response;
+      try {
+        response = await this.axInstance.post('clientrequest', request);
+        this.log.debug(`Received response from webhook ${JSON.stringify(response.data)}`);
+        const responseBody = response.data as ResponseBody;
+        responseBody.events.forEach(event => {
+          const device = this.devices.find(device => device.id === event.deviceId);
+          if (device) {
+            device.processEvent(event);
+          }
+        });
+      } catch (error) {
+        //this.shutdown = true;
+        this.log.error(`Could not connect to web hook service: ${error}.  Will retry`);
+        await this.wait(WH_CONNECT_RETRY_MINUTES * 60  * 1000);
+      }
     }
+  }
+
+  async wait(seconds):Promise<void> {
+    return new Promise(resolve => {
+      setTimeout(() => resolve(), seconds * 1000);
+    });
   }
 
   stopService() {

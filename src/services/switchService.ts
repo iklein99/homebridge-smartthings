@@ -72,7 +72,9 @@ export class SwitchService extends BaseService {
   }
 
   public processEvent(event: ShortEvent): void {
-    this.log.debug(`Event updating switch capability for ${this.name} to ${event.value}`);
-    this.service.updateCharacteristic(this.platform.Characteristic.On, event.value === 'on');
+    if (event.capability === 'switch') {
+      this.log.debug(`Event updating switch capability for ${this.name} to ${event.value}`);
+      this.service.updateCharacteristic(this.platform.Characteristic.On, event.value === 'on');
+    }
   }
 }
