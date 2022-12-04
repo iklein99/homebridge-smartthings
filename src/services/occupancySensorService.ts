@@ -1,21 +1,22 @@
 import { PlatformAccessory } from 'homebridge';
 import { IKHomeBridgeHomebridgePlatform } from '../platform';
-import { SensorService } from './sensorService';
 import { MultiServiceAccessory } from '../multiServiceAccessory';
+import { SensorService } from './sensorService';
 
-export class HumidityService extends SensorService {
+export class OccupancySensorService extends SensorService {
 
   constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, multiServiceAccessory: MultiServiceAccessory,
     name: string, deviceStatus) {
     super(platform, accessory, multiServiceAccessory, name, deviceStatus);
 
-    this.log.debug(`Adding HumidityService to ${this.name}`);
-    this.initService(platform.Service.HumiditySensor, platform.Characteristic.CurrentRelativeHumidity, (status) => {
-      if (status.relativeHumidityMeasurement.humidity.value === null || status.relativeHumidityMeasurement.humidity.value === undefined) {
+    this.log.debug(`Adding OccupancySensorService to ${this.name}`);
+
+    this.initService(platform.Service.OccupancySensor, platform.Characteristic.OccupancyDetected, (status) => {
+      if (status.presenceSensor.presence.value === null || status.presenceSensor.presence.value === undefined) {
         this.log.warn(`${this.name} returned bad value for status`);
         throw('Bad Value');
       }
-      return status.relativeHumidityMeasurement.humidity.value;
+      return status.presenceSensor.presence.value === 'present' ? 1 : 0;
     });
   }
 }

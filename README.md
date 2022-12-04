@@ -5,6 +5,7 @@
 
 </p>
 
+[![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
 
 # Smartthings Homebridge Plugin 
 
@@ -12,10 +13,39 @@ This is yet another smartthings plugin for Homebridge.  This requires no access 
 require a lot of work to install.  It will discover devices automatically as well as unregister devices that are removed
 from your smarttthings network.  This is currently under development.
 
-## New in 1.4.7-Beta
-Rearchitecting plugin to handle multi service devices.  Changing the way services are added based on capabilities reported in 
-Smartthings rather than the category, which may not be accurate and is an optional field.  Note this is early beta - use at 
-your own risk
+## Fixed in 1.4.15
+* Improvements to timing issued resulting in switch status flip flopping after a command is sent.
+
+## Fixed in 1.4.14
+* Fixed an issue where a valve wasn't detected unless it has a switch capability
+* Fixed issue where switches and other items momentarily switch back to previous state when activated.
+
+## Fixed in 1.4.13
+* Support for certain multi-component accessories
+* Fixed fan support for fans that don't support SwitchLevel
+
+## New in 1.4.12
+* Support for CO detector
+* Support for Valves (as irrigation valves)
+
+## New in 1.4.11
+* Smoke detector support
+* The plugin is now verfied!
+* Added funding link in homebridge
+
+## Fixed in 1.4.10
+* Error messages when light sensor returns 0.  
+* Error caused Homebridge to quit during startup
+* Error when locks or doors were offline cuases Homebridge to fail.
+
+## Fixed in 1.4.9
+Will ignore (warning will be shown) if a battery is returning null.  Won't convert temp to celcius if it is being reported
+to in celcius.
+## New in 1.4.8
+Support for Leak (water) detectors.
+## New in 1.4.7
+Rearchitecte plugin to handle multi service devices.  Changing the way services are added based on capabilities reported in 
+Smartthings rather than the category, which may not be accurate and is an optional field.  
 
 ## Fixed in version 1.4.6
 There was a timing issue that could cause a crash upon startup.

@@ -13,7 +13,13 @@ import { LockService } from './services/lockService';
 import { DoorService } from './services/doorService';
 import { SwitchService } from './services/switchService';
 import { LightService } from './services/lightService';
-import { FanService } from './services/fanService';
+import { FanSwitchLevelService } from './services/fanSwitchLevelService';
+import { OccupancySensorService } from './services/occupancySensorService';
+import { LeakDetectorService } from './services/leakDetector';
+import { SmokeDetectorService } from './services/smokeDetector';
+import { CarbonMonoxideDetectorService } from './services/carbonMonoxideDetector';
+import { ValveService } from './services/valveService';
+import { FanSpeedService } from './services/fanSpeedService copy';
 
 
 /**
@@ -37,18 +43,27 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
     'lock': LockService,
     // 'switch': SwitchService,
     'motionSensor': MotionService,
+    'waterSensor' : LeakDetectorService,
+    'smokeDetector': SmokeDetectorService,
+    'carbonMonoxideDetector': CarbonMonoxideDetectorService,
+    'presenceSensor': OccupancySensorService,
     'temperatureMeasurement': TemperatureService,
     'relativeHumidityMeasurement': HumidityService,
     'illuminanceMeasurement': LightSensorService,
     'contactSensor': ContactSensorService,
     'battery': BatteryService,
+    'valve': ValveService,
   };
 
   // Maps combinations of supported capabilities to a service
   private static comboCapabilityMap = [
     {
+      capabilities: ['switch', 'fanSpeed', 'switchLevel'],
+      service: FanSwitchLevelService,
+    },
+    {
       capabilities: ['switch', 'fanSpeed'],
-      service: FanService,
+      service: FanSpeedService,
     },
     {
       capabilities: ['switch', 'switchLevel'],
@@ -61,6 +76,10 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
     {
       capabilities: ['switch', 'colorTemperature'],
       service: LightService,
+    },
+    {
+      capabilities: ['switch', 'valve'],
+      service: ValveService,
     },
     {
       capabilities: ['switch'],
@@ -133,13 +152,13 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
     }
   }
 
-  public refreshStatus(): Promise<boolean> {
+  public async refreshStatus(): Promise<boolean> {
     return super.refreshStatus();
   }
 
   public startPollingState(pollSeconds: number, getValue: () => Promise<CharacteristicValue>, service: Service,
     chracteristic: WithUUID<new () => Characteristic>, targetStateCharacteristic?: WithUUID<new () => Characteristic>,
-    getTargetState?: () => CharacteristicValue) {
+    getTargetState?: () => Promise<CharacteristicValue>) {
     return super.startPollingState(pollSeconds, getValue, service, chracteristic, targetStateCharacteristic, getTargetState);
   }
 

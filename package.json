@@ -2,7 +2,7 @@
   "private": false,
   "displayName": "SmartThings Plugin",
   "name": "homebridge-smartthings-ik",
-  "version": "1.4.7-beta.2",
+  "version": "1.4.15",
   "description": "Connects SmartThings devices to Homebridge.  Automatically discovers devices.",
   "license": "Apache-2.0",
   "repository": {
@@ -39,5 +39,15 @@
     "rimraf": "^3.0.2",
     "ts-node": "^10.3.0",
     "typescript": "^4.4.4"
-  }
+  },
+  "funding": [
+    {
+      "type": "paypal",
+      "url": "https://www.paypal.com/paypalme/iklein99"
+    },
+    {
+      "type": "venmo",
+      "url": "https://venmo.com/?txn=pay&audience=public&recipients=ira-klein-3"
+    }
+  ]
 }

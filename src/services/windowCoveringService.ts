@@ -1,14 +1,9 @@
-import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
-import { BasePlatformAccessory } from './basePlatformAccessory';
-import { IKHomeBridgeHomebridgePlatform } from './platform';
+import { PlatformAccessory, CharacteristicValue } from 'homebridge';
+import { IKHomeBridgeHomebridgePlatform } from '../platform';
+import { BaseService } from './baseService';
+import { MultiServiceAccessory } from '../multiServiceAccessory';
 
-/**
- * Platform Accessory
- * An instance of this class is created for each accessory your platform registers
- * Each accessory may expose multiple services of different service types.
- */
-export class WindowShadeLevelPlatformAccessory extends BasePlatformAccessory {
-  private service: Service;
+export class WindowCoveriingService extends BaseService {
   private targetPosition = 0;
   private timer;
   private states = {
@@ -17,40 +12,21 @@ export class WindowShadeLevelPlatformAccessory extends BasePlatformAccessory {
     stopped: this.platform.Characteristic.PositionState.STOPPED,
   };
 
-  // private log: Logger;
+  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, multiServiceAccessory: MultiServiceAccessory,
+    name: string, deviceStatus) {
+    super(platform, accessory, multiServiceAccessory, name, deviceStatus);
 
-  /**
-   * These are just used to create a working example
-   * You should implement your own code to track the state of your accessory
-   */
-
-  constructor(
-    platform: IKHomeBridgeHomebridgePlatform,
-    accessory: PlatformAccessory,
-  ) {
-
-    super(platform, accessory);
-
-    // this.log = platform.log;
-
-    this.service = accessory.getService(platform.Service.WindowCovering) || accessory.addService(platform.Service.WindowCovering);
-
-    // set the service name, this is what is displayed as the default name on the Home app
-    // in this example we are using the name we stored in the `accessory.context` in the `discoverDevices` method.
-    this.service.setCharacteristic(platform.Characteristic.Name, accessory.context.device.label);
-
-    // each service must implement at-minimum the "required characteristics" for the given service type
-    // see https://developers.homebridge.io/#/service/Lightbulb
-
-    // register handlers for the On/Off Characteristic
-    this.service.getCharacteristic(platform.Characteristic.CurrentPosition).onGet(this.getCurrentPositionCallback.bind(this));
-    this.service.getCharacteristic(platform.Characteristic.PositionState).onGet(this.getPositionState.bind(this));
-
+    this.setServiceType(platform.Service.Switch);
+    // Set the event handlers
+    this.log.debug(`Adding WindowShadeService to ${this.name}`);
+    this.service.getCharacteristic(platform.Characteristic.CurrentPosition)
+      .onGet(this.getCurrentPosition.bind(this));
+    this.service.getCharacteristic(platform.Characteristic.PositionState)
+      .onGet(this.getCurrentPositionState.bind(this));
     this.service.getCharacteristic(platform.Characteristic.TargetPosition)
-      .onSet(this.setTargetPosition.bind(this))
-      .onGet(this.getTargetPosition.bind(this));
+      .onGet(this.getTargetPosition.bind(this))
+      .onSet(this.setTargetPosition.bind(this));
   }
-
 
   /**
    * Handle "SET" requests from HomeKit
@@ -64,18 +40,12 @@ export class WindowShadeLevelPlatformAccessory extends BasePlatformAccessory {
 
     this.targetPosition = value as number;
 
-    if (!this.online) {
+    if (!this.multiServiceAccessory.isOnline()) {
       this.log.error(this.name + ' is offline');
-      throw new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
 
-    this.axInstance.post(this.commandURL, JSON.stringify([{
-      capability: 'windowShadeLevel',
-      command: 'setShadeLevel',
-      arguments: [
-        value,
-      ],
-    }]))
+    this.multiServiceAccessory.sendCommand('windowShadeLevel', 'setShadeLevel', [value])
       .then(() => {
         this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
         this.pollTry = 0;
@@ -84,7 +54,7 @@ export class WindowShadeLevelPlatformAccessory extends BasePlatformAccessory {
         // Poll every 2 seconds
         this.timesAtSameLevel = 0;
         this.shadeState = this.platform.Characteristic.PositionState.STOPPED;
-        this.timer = setInterval(this.pollShadeLevel = this.pollShadeLevel.bind(this), 2000, this);
+        this.timer = setInterval(this.pollShadeLevel.bind(this), 2000);
       })
       .catch(reason => {
         this.log.error('onSet(' + value + ') FAILED for ' + this.name + ': reason ' + reason);
@@ -101,7 +71,7 @@ export class WindowShadeLevelPlatformAccessory extends BasePlatformAccessory {
    * @param t - the 'this' variable
    * Polls the device as it is moving into position after a command to change it.
    */
-  private async pollShadeLevel(t: WindowShadeLevelPlatformAccessory) {
+  private async pollShadeLevel() {
     this.log.debug(`Shade level poll event #${this.pollTry + 1} for ${this.name}`);
 
     this.getCurrentPosition().then(value => {
@@ -113,14 +83,14 @@ export class WindowShadeLevelPlatformAccessory extends BasePlatformAccessory {
       // If we are within 5 pct of target, consider us finished.
       if (Math.abs(currentPostion - this.targetPosition) <= 5) {
         this.log.debug(`${this.name} close to target postion of ${this.targetPosition}.  Close enough!`);
-        this.service.updateCharacteristic(t.platform.Characteristic.CurrentPosition, this.targetPosition);
+        this.service.updateCharacteristic(this.platform.Characteristic.CurrentPosition, this.targetPosition);
         clearInterval(this.timer);
         this.shadeState = this.states.stopped;
         return;
       }
 
       // Let Homebridge know where we are, then see if we are stuck her, lowering or raising.
-      this.service.updateCharacteristic(t.platform.Characteristic.CurrentPosition, currentPostion);
+      this.service.updateCharacteristic(this.platform.Characteristic.CurrentPosition, currentPostion);
       if (currentPostion === this.lastPolledShadeLevel) {
         if (++this.timesAtSameLevel > 5) {
           // After 10 seconds at same level, we're done.
@@ -152,7 +122,7 @@ export class WindowShadeLevelPlatformAccessory extends BasePlatformAccessory {
     return this.targetPosition;
   }
 
-  async getCurrentPositionCallback(): Promise<CharacteristicValue> {
+  async getCurrentPositionState(): Promise<CharacteristicValue> {
     this.log.debug('Received getCurrentPosition() event for ' + this.name);
     return this.getCurrentPosition();
   }
@@ -176,25 +146,21 @@ export class WindowShadeLevelPlatformAccessory extends BasePlatformAccessory {
 
     return new Promise<CharacteristicValue>((resolve, reject) => {
 
-      if (!this.online) {
+      if (!this.multiServiceAccessory.isOnline()) {
         this.log.error(this.name + ' is offline');
-        return reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+        return reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       }
 
-      this.axInstance.get(this.statusURL).then(res => {
+      this.getStatus().then(success => {
 
-        if (res.data.components.main.windowShadeLevel.shadeLevel.value !== undefined) {
-          this.log.debug('onGet() SUCCESSFUL for ' + this.name + '. value = ' + res.data.components.main.windowShadeLevel.shadeLevel.value);
-          const position = res.data.components.main.windowShadeLevel.shadeLevel.value;
+        if (success) {
+          const position = this.deviceStatus.status.windowShadeLevel.shadeLevel.value;
+          this.log.debug('onGet() SUCCESSFUL for ' + this.name + '. value = ' + position);
           resolve(position);
         } else {
           this.log.error('onGet() FAILED for ' + this.name + '. Undefined value');
-          reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+          reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         }
-
-      }).catch(() => {
-        this.log.error('onGet() FAILED for ' + this.name + '. Comm error.');
-        reject(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       });
     });
   }
@@ -204,10 +170,5 @@ export class WindowShadeLevelPlatformAccessory extends BasePlatformAccessory {
     return this.shadeState;
   }
 
-  // async getPositionState(): Promise<CharacteristicValue> {
-  //   // TODO: Write me.
-  //   return new Promise(resolve => {
-  //     resolve(0);
-  //   });
-  // }
+
 }

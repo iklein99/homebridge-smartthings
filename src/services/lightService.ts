@@ -17,7 +17,8 @@ export class LightService extends BaseService {
       .onGet(this.getSwitchState.bind(this))
       .onSet(this.setSwitchState.bind(this));
 
-    if (accessory.context.device.components[0].capabilities.find(c => c.id === 'switchLevel')) {
+    // if (accessory.context.device.components[0].capabilities.find(c => c.id === 'switchLevel')) {
+    if (this.findCapability('switchLevel')) {
       this.log.debug(`${this.name} supports switchLevel`);
       this.service.getCharacteristic(platform.Characteristic.Brightness)
         .onSet(this.setLevel.bind(this))
@@ -25,7 +26,8 @@ export class LightService extends BaseService {
     }
 
     // If this bulb supports colorTemperature, then add those handlers
-    if (accessory.context.device.components[0].capabilities.find(c => c.id === 'colorTemperature')) {
+    // if (accessory.context.device.components[0].capabilities.find(c => c.id === 'colorTemperature')) {
+    if (this.findCapability('colorTemperature')) {
       this.log.debug(`${this.name} supports colorTemperature`);
       this.service.getCharacteristic(platform.Characteristic.ColorTemperature)
         .onSet(this.setColorTemp.bind(this))
@@ -33,7 +35,8 @@ export class LightService extends BaseService {
     }
 
     // If we support color control...
-    if (accessory.context.device.components[0].capabilities.find(c => c.id === 'colorControl')) {
+    //if (accessory.context.device.components[0].capabilities.find(c => c.id === 'colorControl')) {
+    if (this.findCapability('colorControl')) {
       this.log.debug(`${this.name} supports colorControl`);
       this.service.getCharacteristic(platform.Characteristic.Hue)
         .onSet(this.setHue.bind(this))
@@ -65,6 +68,7 @@ export class LightService extends BaseService {
     this.multiServiceAccessory.sendCommand('switch', value ? 'on' : 'off').then((success) => {
       if (success) {
         this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
+        this.deviceStatus.timestamp = 0;
       } else {
         this.log.error(`Command failed for ${this.name}`);
       }
@@ -75,13 +79,13 @@ export class LightService extends BaseService {
   async getSwitchState(): Promise<CharacteristicValue> {
     // if you need to return an error to show the device as "Not Responding" in the Home app:
     // throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    this.log.debug('Received getLockState() event for ' + this.name);
+    this.log.debug('Received getSwitchState() event for ' + this.name);
 
     return new Promise((resolve, reject) => {
       this.getStatus().then(success => {
         if (success) {
           const switchState = this.deviceStatus.status.switch.switch.value;
-          this.log.debug(`LockState value from ${this.name}: ${switchState}`);
+          this.log.debug(`SwitchState value from ${this.name}: ${switchState}`);
           resolve(switchState === 'on');
         } else {
           reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
@@ -102,6 +106,7 @@ export class LightService extends BaseService {
       this.multiServiceAccessory.sendCommand('switchLevel', 'setLevel', [value]).then(success => {
         if (success) {
           this.log.debug('setLevel(' + value + ') SUCCESSFUL for ' + this.name);
+          this.deviceStatus.timestamp = 0;
           resolve();
         } else {
           this.log.error(`Failed to send setLevel command for ${this.name}`);
@@ -120,7 +125,7 @@ export class LightService extends BaseService {
         this.log.error(this.accessory.context.device.label + 'is offline');
         return reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       }
-      this.multiServiceAccessory.refreshStatus().then((success) => {
+      this.getStatus().then((success) => {
         if (!success) {
           this.log.error(`Could not get device status for ${this.name}`);
           return reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
@@ -156,7 +161,7 @@ export class LightService extends BaseService {
 
   async getColorTemp(): Promise<CharacteristicValue> {
     return new Promise((resolve, reject) => {
-      this.multiServiceAccessory.refreshStatus().then((success) => {
+      this.getStatus().then((success) => {
         if (!success) {
           //this.online = false;
           this.log.error(`Could not get device status for ${this.name}`);
@@ -194,7 +199,7 @@ export class LightService extends BaseService {
 
   async getHue(): Promise < CharacteristicValue > {
     return new Promise((resolve, reject) => {
-      this.multiServiceAccessory.refreshStatus().then((success) => {
+      this.getStatus().then((success) => {
         if (!success) {
           //this.online = false;
           this.log.error(`Could not get device status for ${this.name}`);
@@ -229,7 +234,7 @@ export class LightService extends BaseService {
 
   async getSaturation(): Promise < CharacteristicValue > {
     return new Promise((resolve, reject) => {
-      this.multiServiceAccessory.refreshStatus().then((success) => {
+      this.getStatus().then((success) => {
         if (!success) {
           this.log.error(`Could not get device status for ${this.name}`);
           return reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));

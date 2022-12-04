@@ -45,22 +45,27 @@ export class LockService extends BaseService {
   }
 
   // Return the current target state
-  getLockTargetState(): number {
+  async getLockTargetState(): Promise<number> {
     // If it has been more than 10 seconds since we've sent a transition command,
     // reset the target state to the current state.
 
     if (Date.now() - this.lockInTransitionStart > 10000) {
-      this.multiServiceAccessory.refreshStatus().then(success => {
-        if (!success) {
-          throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-        }
-        this.targetState = this.deviceStatus.status.lock.lock.value === 'locked' ?
-          this.platform.Characteristic.LockTargetState.SECURED:
-          this.platform.Characteristic.LockTargetState.UNSECURED;
-        this.log.debug(`Reset ${this.name} to ${this.targetState}`);
+      return new Promise((resolve, reject) => {
+        this.getStatus().then(success => {
+          if (!success) {
+            reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+            return;
+          }
+          this.targetState = this.deviceStatus.status.lock.lock.value === 'locked' ?
+            this.platform.Characteristic.LockTargetState.SECURED :
+            this.platform.Characteristic.LockTargetState.UNSECURED;
+          this.log.debug(`Reset ${this.name} to ${this.targetState}`);
+          resolve(this.targetState);
+        });
       });
+    } else {
+      return this.targetState;
     }
-    return this.targetState;
   }
 
   // Set the target state of the lock
@@ -78,6 +83,7 @@ export class LockService extends BaseService {
     this.multiServiceAccessory.sendCommand('lock', value ? 'lock' : 'unlock').then((success) => {
       if (success) {
         this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
+        this.deviceStatus.timestamp = 0; // Force refresh
       } else {
         this.log.error(`Command failed for ${this.name}`);
       }
