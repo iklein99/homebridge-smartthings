@@ -16,7 +16,7 @@ export class WindowCoveriingService extends BaseService {
     name: string, deviceStatus) {
     super(platform, accessory, multiServiceAccessory, name, deviceStatus);
 
-    this.setServiceType(platform.Service.Switch);
+    this.setServiceType(platform.Service.WindowCovering);
     // Set the event handlers
     this.log.debug(`Adding WindowShadeService to ${this.name}`);
     this.service.getCharacteristic(platform.Characteristic.CurrentPosition)

@@ -3,22 +3,33 @@ import { IKHomeBridgeHomebridgePlatform } from '../platform';
 import { BaseService } from './baseService';
 import { MultiServiceAccessory } from '../multiServiceAccessory';
 
-export class FanSpeedService extends BaseService {
+const stateMap = ['off', 'heat', 'cool', 'auto'];
+
+export class ThermostatService extends BaseService {
 
   constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, multiServiceAccessory: MultiServiceAccessory,
     name: string, deviceStatus) {
     super(platform, accessory, multiServiceAccessory, name, deviceStatus);
-    this.setServiceType(platform.Service.Fan);
+    this.setServiceType(platform.Service.Thermostat);
 
     // Set the event handlers
-    this.log.debug(`Adding FanSpeedService to ${this.name}`);
-    this.service.getCharacteristic(platform.Characteristic.On)
-      .onGet(this.getSwitchState.bind(this))
-      .onSet(this.setSwitchState.bind(this));
+    this.log.debug(`++ Adding ThermostatService to ${this.name}`);
+    this.service.getCharacteristic(platform.Characteristic.TargetHeatingCoolingState)
+      .onGet(this.getTargetHeatingCoolingState.bind(this))
+      .onSet(this.setTargetHeatingCoolingState.bind(this));
 
     this.service.getCharacteristic(platform.Characteristic.RotationSpeed)
       .onSet(this.setLevel.bind(this))
       .onGet(this.getLevel.bind(this));
+
+    this.service.getCharacteristic(platform.Characteristic.TargetTemperature)
+      .setProps({
+        minValue: 17,
+        maxValue: 32,
+      })
+      .onGet(this.getTargetTemperature.bind(this))
+      .onSet(this.setTargetTemperature.bind(this));
+
 
     let pollSwitchesAndLightsSeconds = 10; // default to 10 seconds
     if (this.platform.config.PollSwitchesAndLightsSeconds !== undefined) {
@@ -26,22 +37,24 @@ export class FanSpeedService extends BaseService {
     }
 
     if (pollSwitchesAndLightsSeconds > 0) {
-      multiServiceAccessory.startPollingState(pollSwitchesAndLightsSeconds, this.getSwitchState.bind(this), this.service,
-        platform.Characteristic.On);
+      multiServiceAccessory.startPollingState(pollSwitchesAndLightsSeconds, this.getTargetHeatingCoolingState.bind(this), this.service,
+        platform.Characteristic.TargetHeatingCoolingState);
       multiServiceAccessory.startPollingState(pollSwitchesAndLightsSeconds, this.getLevel.bind(this), this.service,
         platform.Characteristic.RotationSpeed);
     }
   }
 
   // Set the target
-  async setSwitchState(value: CharacteristicValue) {
-    this.log.debug('Received setSwitchState(' + value + ') event for ' + this.name);
+  async setTargetHeatingCoolingState(value: CharacteristicValue) {
+    //this.log.debug('Received setTargetHeatingCoolingState(' + value + ') event for ' + this.name);
 
     if (!this.multiServiceAccessory.isOnline) {
       this.log.error(this.name + ' is offline');
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
-    this.multiServiceAccessory.sendCommand('switch', value ? 'on' : 'off').then((success) => {
+
+    const targetState = stateMap[+value];
+    this.multiServiceAccessory.sendCommand('thermostatMode', 'setThermostatMode', [targetState] ).then((success) => {
       if (success) {
         this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
       } else {
@@ -51,7 +64,7 @@ export class FanSpeedService extends BaseService {
   }
 
   // Get the current state of the lock
-  async getSwitchState(): Promise<CharacteristicValue> {
+  async getTargetHeatingCoolingState(): Promise<CharacteristicValue> {
     // if you need to return an error to show the device as "Not Responding" in the Home app:
     // throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     this.log.debug('Received getSwitchState() event for ' + this.name);
@@ -59,9 +72,14 @@ export class FanSpeedService extends BaseService {
     return new Promise((resolve, reject) => {
       this.getStatus().then(success => {
         if (success) {
-          const switchState = this.deviceStatus.status.switch.switch.value;
-          this.log.debug(`SwitchState value from ${this.name}: ${switchState}`);
-          resolve(switchState === 'on');
+          const status = this.deviceStatus.status;
+          if (status.thermostatMode === undefined) {
+            resolve(this.platform.Characteristic.TargetHeatingCoolingState.AUTO);
+            return;
+          }
+
+          const value = stateMap.indexOf(status.thermostatMode.thermostatMode.value);
+          resolve(value);
         } else {
           reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         }
@@ -139,6 +157,35 @@ export class FanSpeedService extends BaseService {
           this.log.error('getLevel() FAILED for ' + this.name + '. Undefined value');
           reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         }
+      });
+    });
+  }
+
+  async setTargetTemperature(value: CharacteristicValue): Promise<void> {
+    this.multiServiceAccessory.sendCommand('thermostatHeatingSetpoint', 'setHeatingSetpoint', [value] ).then((success) => {
+      if (success) {
+        this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
+      } else {
+        this.log.error(`Command failed for ${this.name}`);
+      }
+    });
+  }
+
+  async getTargetTemperature(): Promise<CharacteristicValue> {
+    return new Promise((resolve, reject) => {
+      if (!this.multiServiceAccessory.isOnline()) {
+        this.log.info(`${this.name} is offline`);
+        throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+      }
+      this.getStatus().then(success => {
+        if (!success) {
+          return reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+        }
+        const value = this.deviceStatus.status.thermostatHeatingSetpoint.heatingSetpoint.value;
+        const current = this.deviceStatus.status.temperatureMeasurement?.temperature?.value?? value;
+        this.service.setCharacteristic(this.platform.Characteristic.CurrentTemperature, current);
+
+        resolve(value);
       });
     });
   }

@@ -1,9 +1,10 @@
-import { PlatformAccessory, CharacteristicValue } from 'homebridge';
+import { PlatformAccessory, CharacteristicValue, AdaptiveLightingController, AdaptiveLightingControllerMode } from 'homebridge';
 import { IKHomeBridgeHomebridgePlatform } from '../platform';
 import { BaseService } from './baseService';
 import { MultiServiceAccessory } from '../multiServiceAccessory';
 
 export class LightService extends BaseService {
+  private adaptiveLightingController?: AdaptiveLightingController;
 
   constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, multiServiceAccessory: MultiServiceAccessory,
     name: string, deviceStatus) {
@@ -32,6 +33,13 @@ export class LightService extends BaseService {
       this.service.getCharacteristic(platform.Characteristic.ColorTemperature)
         .onSet(this.setColorTemp.bind(this))
         .onGet(this.getColorTemp.bind(this));
+
+      this.adaptiveLightingController = new this.platform.AdaptiveLightingController(this.service, {
+        // options object is optional, default mode is AUTOMATIC, can be set to MANUAL to do transitions yourself
+        // look into the docs for more information
+        controllerMode: AdaptiveLightingControllerMode.AUTOMATIC,
+      });
+      accessory.configureController(this.adaptiveLightingController);
     }
 
     // If we support color control...
@@ -86,7 +94,13 @@ export class LightService extends BaseService {
         if (success) {
           const switchState = this.deviceStatus.status.switch.switch.value;
           this.log.debug(`SwitchState value from ${this.name}: ${switchState}`);
-          resolve(switchState === 'on');
+          const on = switchState === 'on';
+
+          if (!on) {
+            this.adaptiveLightingController?.disableAdaptiveLighting();
+          }
+
+          resolve(on);
         } else {
           reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         }
@@ -151,11 +165,18 @@ export class LightService extends BaseService {
         this.log.error(this.accessory.context.device.label + ' is offline');
         return reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       }
-      const stValue = 6500 - Math.round((value as number - 140) / 360 * 6500) + 1;
-      this.log.debug(`Sending converted temperature value of ${stValue} to ${this.name}`);
-      this.multiServiceAccessory.sendCommand('colorTemperature', 'setColorTemperature', [stValue])
-        .then(() => resolve())
-        .catch((value) => reject(value));
+
+      if (this.service.getCharacteristic(this.platform.Characteristic.On).value === true) {
+        const stValue = 6500 - Math.round((value as number - 140) / 360 * 6500) + 1;
+        this.log.debug(`Sending converted temperature value of ${stValue} to ${this.name}`);
+        this.multiServiceAccessory.sendCommand('colorTemperature', 'setColorTemperature', [stValue])
+          .then(() => resolve())
+          .catch((value) => reject(value));
+      } else {
+        this.log.debug(`Device ${this.name} is off, not sending color temperature`);
+        this.adaptiveLightingController?.disableAdaptiveLighting();
+        resolve();
+      }
     });
   }
 

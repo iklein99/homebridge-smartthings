@@ -13,13 +13,16 @@ import { LockService } from './services/lockService';
 import { DoorService } from './services/doorService';
 import { SwitchService } from './services/switchService';
 import { LightService } from './services/lightService';
+import { AirQualityService } from './services/aitQualityService';
+import { DustSensorService } from './services/dustSensorService';
 import { FanSwitchLevelService } from './services/fanSwitchLevelService';
+import { ThermostatService } from './services/thermostatService';
 import { OccupancySensorService } from './services/occupancySensorService';
 import { LeakDetectorService } from './services/leakDetector';
 import { SmokeDetectorService } from './services/smokeDetector';
 import { CarbonMonoxideDetectorService } from './services/carbonMonoxideDetector';
 import { ValveService } from './services/valveService';
-import { FanSpeedService } from './services/fanSpeedService copy';
+import { FanSpeedService } from './services/fanSpeedService';
 
 
 /**
@@ -39,8 +42,7 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
 
   // Order of these matters.  Make sure secondary capabilities like 'battery' and 'contactSensor' are at the end.
   private static capabilityMap = {
-    'thermostatHeatingSetpoint': HeatService,
-    'fanSpeed': FanSpeedService,
+    'thermostatHeatingSetpoint': ThermostatService,
     'doorControl': DoorService,
     'lock': LockService,
     // 'switch': SwitchService,
@@ -51,6 +53,8 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
     'presenceSensor': OccupancySensorService,
     'temperatureMeasurement': TemperatureService,
     'relativeHumidityMeasurement': HumidityService,
+    'carbonDioxideMeasurement': AirQualityService,
+    'dustSensor': DustSensorService,
     'illuminanceMeasurement': LightSensorService,
     'contactSensor': ContactSensorService,
     'battery': BatteryService,
@@ -59,6 +63,10 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
 
   // Maps combinations of supported capabilities to a service
   private static comboCapabilityMap = [
+    // {
+    //   capabilities: ['thermostatHeatingSetpoint'],
+    //   service: ThermostatService,
+    // },
     {
       capabilities: ['switch', 'fanSpeed', 'switchLevel'],
       service: FanSwitchLevelService,
