@@ -9,7 +9,7 @@
         "title": "Name",
         "type": "string",
         "required": true,
-        "default": "Smartthings Plug (IK)"
+        "default": "Smartthings"
       },
       "BaseURL": {
         "title": "Base URL",
