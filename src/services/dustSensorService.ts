@@ -20,15 +20,5 @@ export class DustSensorService extends SensorService {
       }
       return value;
     });
-
-    // this.initService(platform.Service.AirQualitySensor, platform.Characteristic.PM2_5Density, (status) => {
-    //   const value = status.dustSensor.fineDustLevel.value;
-
-    //   if (value === null || value === undefined) {
-    //     this.log.warn(`${this.name} returned bad value for status`);
-    //     throw('Bad Value');
-    //   }
-    //   return value;
-    // });
   }
 }

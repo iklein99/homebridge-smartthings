@@ -13,7 +13,7 @@ import { LockService } from './services/lockService';
 import { DoorService } from './services/doorService';
 import { SwitchService } from './services/switchService';
 import { LightService } from './services/lightService';
-import { AirQualityService } from './services/aitQualityService';
+import { AirQualityService } from './services/airQualityService';
 import { DustSensorService } from './services/dustSensorService';
 import { FanSwitchLevelService } from './services/fanSwitchLevelService';
 import { ThermostatService } from './services/thermostatService';
@@ -63,10 +63,6 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
 
   // Maps combinations of supported capabilities to a service
   private static comboCapabilityMap = [
-    // {
-    //   capabilities: ['thermostatHeatingSetpoint'],
-    //   service: ThermostatService,
-    // },
     {
       capabilities: ['switch', 'fanSpeed', 'switchLevel'],
       service: FanSwitchLevelService,
