@@ -1,6 +1,6 @@
 {
   "private": true,
-  "displayName": "Test SmartThings",
+  "displayName": "SmartThings (Veon)",
   "name": "homebridge-smartthings-veon",
   "version": "2.4.16",
   "description": "Connects SmartThings devices to Homebridge.  Automatically discovers devices.",
