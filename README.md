@@ -13,6 +13,9 @@ This is yet another smartthings plugin for Homebridge.  This requires no access 
 require a lot of work to install.  It will discover devices automatically as well as unregister devices that are removed
 from your smarttthings network.  This is currently under development.
 
+## Fixed in 1.4.16 / 1.4.17
+* Fixed issue with some lights could not handle setting hue and saturation individually
+
 ## Fixed in 1.4.15
 * Improvements to timing issued resulting in switch status flip flopping after a command is sent.
 
