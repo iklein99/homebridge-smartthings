@@ -188,7 +188,7 @@ export abstract class BasePlatformAccessory {
             this.log.debug(`Delay complete for ${this.name}`);
             this.commandInProgress = false;
             resolve(true);
-          }, 1500);
+          }, 500);
         }).catch((error) => {
           this.commandInProgress = false;
           this.log.error(`${command} failed for ${this.name}: ${error}`);
