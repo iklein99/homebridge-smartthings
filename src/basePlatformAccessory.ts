@@ -161,6 +161,13 @@ export abstract class BasePlatformAccessory {
 
   async sendCommand(capability: string, command: string, args?: unknown[]): Promise<boolean> {
 
+    // Testing...
+    if (command === 'setHue' || command === 'setSaturation') {
+      return new Promise((resolve, reject) => {
+        reject('TESTING');
+      });
+    }
+
     let cmd: unknown;
 
     if (args) {

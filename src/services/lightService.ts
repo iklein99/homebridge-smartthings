@@ -5,6 +5,16 @@ import { MultiServiceAccessory } from '../multiServiceAccessory';
 
 export class LightService extends BaseService {
 
+  // There is a device that can't handle sethue and setsaturation separately and requires both
+  // args using setcolor.
+
+  currentColor = {
+    hue: 0,
+    saturation: 0,
+  };
+
+  requireSetColor = false;
+
   constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, multiServiceAccessory: MultiServiceAccessory,
     name: string, deviceStatus) {
     super(platform, accessory, multiServiceAccessory, name, deviceStatus);
@@ -44,6 +54,10 @@ export class LightService extends BaseService {
       this.service.getCharacteristic(platform.Characteristic.Saturation)
         .onSet(this.setSaturation.bind(this))
         .onGet(this.getSaturation.bind(this));
+
+      // Get current color setting.  Sets currentColor values to start
+      this.getHue();
+      this.getSaturation();
     }
 
     let pollSwitchesAndLightsSeconds = 10; // default to 10 seconds
@@ -186,18 +200,47 @@ export class LightService extends BaseService {
     });
   }
 
-  async setHue(value: CharacteristicValue): Promise<void> {
-    this.log.debug(`setHue called with value ${value}`);
-    const huePct = Math.round((value as number / 360) * 100);
-    this.log.debug(`Hue arc value of ${value} converted to Hue Percent of ${huePct}`);
+  //
+  // If we get an error setting individual hue or saturation, then use setColor to set both at once.  Needed to fix #96
+  //
+  async setColor(hue: number, saturation: number): Promise<void> {
+    this.log.debug(`setColor called with hue: ${hue}, saturation: ${saturation}}`);
     return new Promise((resolve, reject) => {
-      this.multiServiceAccessory.sendCommand('colorControl', 'setHue', [huePct])
+      this.multiServiceAccessory.sendCommand('colorControl', 'setColor', [{
+        hue: this.currentColor.hue,
+        saturation: this.currentColor.saturation,
+      }])
         .then(() => resolve())
         .catch((value) => reject(value));
     });
   }
 
-  async getHue(): Promise < CharacteristicValue > {
+
+  async setHue(value: CharacteristicValue): Promise<void> {
+    this.log.debug(`setHue called with value ${value}`);
+    const huePct = Math.round((value as number / 360) * 100);
+    this.currentColor.hue = huePct;
+    this.log.debug(`Hue arc value of ${value} converted to Hue Percent of ${huePct}`);
+    return new Promise((resolve, reject) => {
+      if (this.requireSetColor) {   // Issue #96
+        this.setColor(this.currentColor.hue, this.currentColor.saturation)
+          .then(() => resolve())
+          .catch((value) => reject(value));
+      } else {
+        this.multiServiceAccessory.sendCommand('colorControl', 'setHue', [huePct])
+          .then(() => resolve())
+          .catch((value) => {
+            this.log.warn(`Received ${value} setting hue for ${this.name}, will try setting color`);
+            this.requireSetColor = true;
+            this.setColor(this.currentColor.hue, this.currentColor.saturation)
+              .then(() => resolve())
+              .catch((value) => reject(value));
+          });
+      }
+    });
+  }
+
+  async getHue(): Promise<CharacteristicValue> {
     return new Promise((resolve, reject) => {
       this.getStatus().then((success) => {
         if (!success) {
@@ -209,6 +252,7 @@ export class LightService extends BaseService {
         if (this.deviceStatus.status.colorControl.hue.value !== undefined) {
           const hue = this.deviceStatus.status.colorControl.hue.value;
           this.log.debug('getHue() SUCCESSFUL for ' + this.name + '. value = ' + hue);
+          this.currentColor.hue = hue;
           const hueArc = Math.round((hue / 100) * 360);
           this.log.debug(`Hue Percent of ${hue} converted to ${hueArc}.`);
           resolve(hueArc);
@@ -224,15 +268,29 @@ export class LightService extends BaseService {
 
   async setSaturation(value: CharacteristicValue): Promise<void> {
     this.log.debug(`setSaturation called with value ${value}`);
+    this.currentColor.saturation = value as number;
     return new Promise((resolve, reject) => {
-      // Convert degress into percent
-      this.multiServiceAccessory.sendCommand('colorControl', 'setSaturation', [value])
-        .then(() => resolve())
-        .catch((value) => reject(value));
+
+      if (this.requireSetColor) {
+        this.setColor(this.currentColor.hue, this.currentColor.saturation)
+          .then(() => resolve())
+          .catch((value) => reject(value));
+      } else {
+        // Convert degress into percent
+        this.multiServiceAccessory.sendCommand('colorControl', 'setSaturation', [value])
+          .then(() => resolve())
+          .catch((value) => {
+            this.log.warn(`Received ${value} setting saturation for ${this.name}, will try setting color`);
+            this.requireSetColor = true;
+            this.setColor(this.currentColor.hue, this.currentColor.saturation)
+              .then(() => resolve())
+              .catch((value) => reject(value));
+          });
+      }
     });
   }
 
-  async getSaturation(): Promise < CharacteristicValue > {
+  async getSaturation(): Promise<CharacteristicValue> {
     return new Promise((resolve, reject) => {
       this.getStatus().then((success) => {
         if (!success) {
@@ -242,6 +300,7 @@ export class LightService extends BaseService {
 
         if (this.deviceStatus.status.colorControl.saturation.value !== undefined) {
           const satPct = this.deviceStatus.status.colorControl.saturation.value;
+          this.currentColor.saturation = satPct;
           this.log.debug('getSaturation() SUCCESSFUL for ' + this.name + '. value = ' + satPct);
           // Convert saturation from percent to degrees
           resolve(satPct);
