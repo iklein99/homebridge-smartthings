@@ -203,18 +203,16 @@ export class LightService extends BaseService {
   //
   // If we get an error setting individual hue or saturation, then use setColor to set both at once.  Needed to fix #96
   //
-  async setColor(hue: number, saturation: number): Promise<void> {
+  async setColor(hue: number, saturation: number): Promise<boolean> {
     this.log.debug(`setColor called with hue: ${hue}, saturation: ${saturation}}`);
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       this.multiServiceAccessory.sendCommand('colorControl', 'setColor', [{
         hue: this.currentColor.hue,
         saturation: this.currentColor.saturation,
       }])
-        .then(() => resolve())
-        .catch((value) => reject(value));
+        .then((success) => resolve(success));
     });
   }
-
 
   async setHue(value: CharacteristicValue): Promise<void> {
     this.log.debug(`setHue called with value ${value}`);
@@ -222,21 +220,31 @@ export class LightService extends BaseService {
     this.currentColor.hue = huePct;
     this.log.debug(`Hue arc value of ${value} converted to Hue Percent of ${huePct}`);
     return new Promise((resolve, reject) => {
+
       if (this.requireSetColor) {   // Issue #96
         this.setColor(this.currentColor.hue, this.currentColor.saturation)
           .then(() => resolve())
           .catch((value) => reject(value));
+
       } else {
         this.multiServiceAccessory.sendCommand('colorControl', 'setHue', [huePct])
-          .then(() => resolve())
-          .catch((value) => {
-            this.log.warn(`Received ${value} setting hue for ${this.name}, will try setting color`);
-            this.requireSetColor = true;
-            this.setColor(this.currentColor.hue, this.currentColor.saturation)
-              .then(() => resolve())
-              .catch((value) => reject(value));
+          .then((success) => {
+            if (success) {
+              resolve();
+            } else {
+              this.log.warn(`Received ${value} setting hue for ${this.name}, will try setting color`);
+              this.requireSetColor = true;
+              this.setColor(this.currentColor.hue, this.currentColor.saturation).then((success) => {
+                if (!success) {
+                  reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+                } else {
+                  resolve();
+                }
+              });
+            }
           });
       }
+
     });
   }
 
@@ -276,15 +284,22 @@ export class LightService extends BaseService {
           .then(() => resolve())
           .catch((value) => reject(value));
       } else {
-        // Convert degress into percent
+
         this.multiServiceAccessory.sendCommand('colorControl', 'setSaturation', [value])
-          .then(() => resolve())
-          .catch((value) => {
-            this.log.warn(`Received ${value} setting saturation for ${this.name}, will try setting color`);
-            this.requireSetColor = true;
-            this.setColor(this.currentColor.hue, this.currentColor.saturation)
-              .then(() => resolve())
-              .catch((value) => reject(value));
+          .then((success) => {
+            if (success) {
+              resolve();
+            } else {
+              this.log.warn(`Received ${value} setting saturation for ${this.name}, will try setting color`);
+              this.requireSetColor = true;
+              this.setColor(this.currentColor.hue, this.currentColor.saturation).then(success => {
+                if (success) {
+                  resolve();
+                } else {
+                  reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+                }
+              });
+            }
           });
       }
     });
