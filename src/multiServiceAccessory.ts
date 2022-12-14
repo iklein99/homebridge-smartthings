@@ -20,6 +20,7 @@ import { SmokeDetectorService } from './services/smokeDetector';
 import { CarbonMonoxideDetectorService } from './services/carbonMonoxideDetector';
 import { ValveService } from './services/valveService';
 import { FanSpeedService } from './services/fanSpeedService copy';
+import { WindowCoveriingService } from './services/windowCoveringService';
 
 
 /**
@@ -42,6 +43,7 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
     'doorControl': DoorService,
     'lock': LockService,
     // 'switch': SwitchService,
+    'windowShadeLevel': WindowCoveriingService,
     'motionSensor': MotionService,
     'waterSensor' : LeakDetectorService,
     'smokeDetector': SmokeDetectorService,
