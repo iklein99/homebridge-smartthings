@@ -5,7 +5,8 @@ import { MultiServiceAccessory } from '../multiServiceAccessory';
 
 export class ThermostatService extends BaseService {
   targetHeatingCoolingState: any;
-  targetTemperature = 0;
+  targetTemperature: any;
+  units = 'C';
 
   constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, multiServiceAccessory: MultiServiceAccessory,
     name: string, deviceStatus) {
@@ -28,7 +29,15 @@ export class ThermostatService extends BaseService {
       .onGet(this.getTemperatureDisplayUnits.bind(this))
       .onSet(this.setTemperatureDisplayUnits.bind(this));
 
+    this.targetHeatingCoolingState = platform.Characteristic.TargetHeatingCoolingState.OFF;
+    this.targetTemperature = 25;
+
     // TODO: get the current mode and set targetHeatingCoolingState
+
+    // set targets
+
+    this.getCurrentHeatingCoolingState().then((value) => this.targetHeatingCoolingState = value);
+    this.getCurrentTemperature().then((value) => this.targetTemperature = value as number);
 
     let pollSensors = 10; // default to 10 seconds
     if (this.platform.config.PollSensorsSeconds !== undefined) {
@@ -37,12 +46,19 @@ export class ThermostatService extends BaseService {
 
     if (pollSensors > 0) {
       multiServiceAccessory.startPollingState(pollSensors, this.getCurrentHeatingCoolingState.bind(this), this.service,
-        platform.Characteristic.On);
+        platform.Characteristic.CurrentHeatingCoolingState, platform.Characteristic.TargetHeatingCoolingState,
+        this.getTargetHeatingCoolingState.bind(this));
+
+      multiServiceAccessory.startPollingState(pollSensors, this.getCurrentTemperature.bind(this), this.service,
+        platform.Characteristic.CurrentTemperature,
+        platform.Characteristic.TargetTemperature, this.getTargetTemperature.bind(this));
     }
   }
 
-  getTargetHeatingCoolingState() {
-    return this.targetHeatingCoolingState;
+  // TARGET STATE CALLBACKS
+  getTargetHeatingCoolingState():Promise<CharacteristicValue> {
+    this.log.debug('Received getTargetHeatingCoolingState for ' + this.name);
+    return new Promise((resolve) => resolve (this.targetHeatingCoolingState));
   }
 
   // Set the target state of the thermostat
@@ -85,7 +101,7 @@ export class ThermostatService extends BaseService {
     });
   }
 
-  // Get the current state of the lock
+  // CURRENT STATE
   async getCurrentHeatingCoolingState(): Promise<CharacteristicValue> {
     // if you need to return an error to show the device as "Not Responding" in the Home app:
     // throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
@@ -121,7 +137,9 @@ export class ThermostatService extends BaseService {
     });
   }
 
+  // CURRENT TEMP
   async getCurrentTemperature(): Promise<CharacteristicValue> {
+    this.log.debug('Received getCurrentTemperature for ' + this.name);
     return new Promise((resolve) => {
       this.getStatus().then((success) => {
         if (success) {
@@ -134,8 +152,10 @@ export class ThermostatService extends BaseService {
           }
           if (this.deviceStatus.status.temperatureMeasurement.temperature.unit === 'F') {
             this.log.debug('Converting temp to celcius');
+            this.units = 'F';
             resolve((this.deviceStatus.status.temperatureMeasurement.temperature.value as number - 32) * (5 / 9)); // Convert to Celcius
           } else {
+            this.units = 'C';
             resolve(this.deviceStatus.status.temperatureMeasurement.temperature.value);
           }
         } else {
@@ -143,6 +163,47 @@ export class ThermostatService extends BaseService {
         }
       });
     });
+  }
 
+  // TARGET TEMP
+  getTargetTemperature():Promise<CharacteristicValue> {
+    this.log.debug('Received GetTargetTemperature for ' + this.name);
+    return new Promise((resolve => resolve(this.targetTemperature)));
+  }
+
+  async setTargetTemperature(value: CharacteristicValue) {
+    this.log.debug('Received setTargetTemperature(' + value + ') event for ' + this.name);
+    this.targetTemperature = value as number;
+    let capability = '';
+    let command = '';
+
+    if (this.targetHeatingCoolingState === this.platform.Characteristic.TargetHeatingCoolingState.COOL) {
+      capability = 'thermostatCoolingSetpoint';
+      command = 'setCoolingSetpoint';
+    } else {
+      capability = 'thermostatHeatingSetpoint';
+      command = 'setHeatingSetpoint';
+    }
+
+    // If the thermostat's units is Farenheit, then we need to convert from celcius
+    const convertedTemp = this.units === 'F' ? (value as number * (9/5)) + 32 : value;
+
+    this.multiServiceAccessory.sendCommand(capability, command, [convertedTemp]);
+  }
+
+  // DISPLAY UNITS
+  getTemperatureDisplayUnits(): CharacteristicValue {
+    this.log.debug('Received getTemperatureDislayUnits for ' + this.name);
+    if (this.units === 'C') {
+      return this.platform.Characteristic.TemperatureDisplayUnits.CELSIUS;
+    } else {
+      return this.platform.Characteristic.TemperatureDisplayUnits.FAHRENHEIT;
+    }
+  }
+
+  setTemperatureDisplayUnits(value: CharacteristicValue) {
+    // Nothing to do as there is no way to send this off to Smartthings
+    this.log.debug(`Received request to set display units to ${value}.  No equivalent in Smartthings...`);
+    return;
   }
 }

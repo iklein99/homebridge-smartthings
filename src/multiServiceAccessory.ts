@@ -21,6 +21,7 @@ import { CarbonMonoxideDetectorService } from './services/carbonMonoxideDetector
 import { ValveService } from './services/valveService';
 import { FanSpeedService } from './services/fanSpeedService copy';
 import { WindowCoveriingService } from './services/windowCoveringService';
+import { ThermostatService } from './services/thermostatService';
 
 
 /**
@@ -87,6 +88,14 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
       capabilities: ['switch'],
       service: SwitchService,
     },
+    {
+      capabilities: ['temperatureMeasurement',
+        'thermostatMode',
+        'thermostatOperatingState',
+        'thermostatOperatingState',
+        'thermostatHeatingSetpoint'],
+      service: ThermostatService,
+    },
   ];
 
   constructor(
@@ -98,7 +107,8 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
 
     // Add services per capabilities
 
-    // If this device has a 'switch' capability, need to look at the combinations to determine what kind of device.  Fans, lights,
+    // If this device has a 'switch' or 'thermostatMode' capability, need to look at the combinations to
+    // determine what kind of device.  Fans, lights,
     // switches all have a switch capability and we need to add the correct one.
 
     Object.keys(MultiServiceAccessory.capabilityMap).forEach((capability) => {
@@ -108,7 +118,7 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
         ));
       }
     });
-    if (capabilities.find(c => c.id === 'switch')) {
+    if (capabilities.find(c => (c.id === 'switch') || c.id === 'thermostatMode')) {
       let service = this.findComboService(capabilities);
       if (service === undefined) {
         service = SwitchService;

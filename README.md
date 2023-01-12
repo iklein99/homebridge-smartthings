@@ -13,6 +13,9 @@ This is yet another smartthings plugin for Homebridge.  This requires no access 
 require a lot of work to install.  It will discover devices automatically as well as unregister devices that are removed
 from your smarttthings network.  This is currently under development.
 
+## Added in 1.4.21
+* Added support for thermostats.
+
 ## Fixed in 1.4.20
 * Will wait to request status update from Smartthings if a request is waiting.  In some instances more than one request
 come around the same time resulting in redundant requests sent to smartthings while others are in progress.
