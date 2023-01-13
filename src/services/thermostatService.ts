@@ -7,6 +7,7 @@ export class ThermostatService extends BaseService {
   targetHeatingCoolingState: any;
   targetTemperature: any;
   units = 'C';
+  supportsOperatingState = false;
 
   constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, multiServiceAccessory: MultiServiceAccessory,
     name: string, deviceStatus) {
@@ -15,6 +16,10 @@ export class ThermostatService extends BaseService {
     this.setServiceType(platform.Service.Thermostat);
     // Set the event handlers
     this.log.debug(`Adding ThermostatService to ${this.name}`);
+
+    if (this.multiServiceAccessory.capabilities.find((c) => c.id === 'thermostatOperatingState')) {
+      this.supportsOperatingState = true;
+    }
     this.service.getCharacteristic(platform.Characteristic.CurrentHeatingCoolingState)
       .onGet(this.getCurrentHeatingCoolingState.bind(this));
     this.service.getCharacteristic(platform.Characteristic.TargetHeatingCoolingState)
@@ -30,7 +35,7 @@ export class ThermostatService extends BaseService {
       .onSet(this.setTemperatureDisplayUnits.bind(this));
 
     this.targetHeatingCoolingState = platform.Characteristic.TargetHeatingCoolingState.OFF;
-    this.targetTemperature = 25;
+    this.targetTemperature = 20;
 
     // TODO: get the current mode and set targetHeatingCoolingState
 
@@ -110,20 +115,22 @@ export class ThermostatService extends BaseService {
     return new Promise((resolve, reject) => {
       this.getStatus().then(success => {
         if (success) {
-          let thermostatOperatingState;
+          let thermostatMode;
           try {
-            thermostatOperatingState = this.deviceStatus.status.thermostatOperatingState.thermostatOperatingState.value;
+            thermostatMode = this.deviceStatus.status.thermostatMode.thermostatMode.value;
           } catch (error) {
-            this.log.error(`Missing thermostatOperatingState from ${this.name}`);
+            this.log.warn(`Missing thermostatMode from ${this.name}`);
+            resolve(this.targetHeatingCoolingState);
+            return;
           }
-          this.log.debug(`thermostatOperatingState value from ${this.name}: ${thermostatOperatingState}`);
+          this.log.debug(`thermostatMode value from ${this.name}: ${thermostatMode}`);
 
-          switch (thermostatOperatingState) {
-            case 'cooling' || 'pending cool':
+          switch (thermostatMode) {
+            case 'cool':
               resolve(this.platform.Characteristic.CurrentHeatingCoolingState.COOL);
               break;
 
-            case 'heating' || 'pending heat':
+            case 'heat':
               resolve(this.platform.Characteristic.CurrentHeatingCoolingState.HEAT);
               break;
 
