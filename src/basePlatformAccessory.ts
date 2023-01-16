@@ -132,9 +132,9 @@ export abstract class BasePlatformAccessory {
 
   protected startPollingState(pollSeconds: number, getValue: () => Promise<CharacteristicValue>, service: Service,
     chracteristic: WithUUID<new () => Characteristic>, targetStateCharacteristic?: WithUUID<new () => Characteristic>,
-    getTargetState?: () => Promise<CharacteristicValue>) {
+    getTargetState?: () => Promise<CharacteristicValue>):NodeJS.Timer|void {
     if (pollSeconds > 0) {
-      setInterval(() => {
+      return setInterval(() => {
         // If we are in the middle of a commmand call, or it hasn't been at least 10 seconds, we don't want to poll.
         if (this.commandInProgress || Date.now() - this.lastCommandCompleted < 20 * 1000) {
           // Skip polling until command is complete

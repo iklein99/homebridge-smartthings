@@ -61,9 +61,41 @@ export class ThermostatService extends BaseService {
   }
 
   // TARGET STATE CALLBACKS
-  getTargetHeatingCoolingState():Promise<CharacteristicValue> {
+  async getTargetHeatingCoolingState():Promise<CharacteristicValue> {
     this.log.debug('Received getTargetHeatingCoolingState for ' + this.name);
-    return new Promise((resolve) => resolve (this.targetHeatingCoolingState));
+    return new Promise((resolve) => {
+      this.getStatus().then(success => {
+        let state;
+        if (success) {
+          state = this.deviceStatus.status.thermostatMode.thermostatMode.value;
+          if (state === null || state === undefined) {
+            this.log.error(`Received invalid heating / cooling state from ${this.name}`);
+            resolve(this.targetHeatingCoolingState);
+            return;
+          }
+          switch(state) {
+            case 'cool':
+              resolve(this.targetHeatingCoolingState = this.platform.Characteristic.TargetHeatingCoolingState.COOL);
+              return;
+
+            case 'heat':
+              resolve(this.targetHeatingCoolingState = this.platform.Characteristic.TargetHeatingCoolingState.HEAT);
+              return;
+
+            case 'auto':
+              resolve(this.targetHeatingCoolingState = this.platform.Characteristic.TargetHeatingCoolingState.AUTO);
+              return;
+
+            default:
+              resolve(this.targetHeatingCoolingState = this.platform.Characteristic.TargetHeatingCoolingState.OFF);
+              return;
+          }
+        } else {
+          resolve(this.targetHeatingCoolingState);
+          return;
+        }
+      });
+    });
   }
 
   // Set the target state of the thermostat
@@ -99,7 +131,7 @@ export class ThermostatService extends BaseService {
     this.multiServiceAccessory.sendCommand('thermostatMode', cmd).then((success) => {
       if (success) {
         this.log.debug('setTargetHeatingCoolingState(' + value + ') SUCCESSFUL for ' + this.name);
-        this.deviceStatus.timestamp = 0;  // Force a refresh next query.
+        //this.deviceStatus.timestamp = 0;  // Force a refresh next query.
       } else {
         this.log.error(`Command failed for ${this.name}`);
       }
@@ -173,9 +205,22 @@ export class ThermostatService extends BaseService {
   }
 
   // TARGET TEMP
-  getTargetTemperature():Promise<CharacteristicValue> {
+  async getTargetTemperature():Promise<CharacteristicValue> {
     this.log.debug('Received GetTargetTemperature for ' + this.name);
-    return new Promise((resolve => resolve(this.targetTemperature)));
+    let temp;
+    if (await this.getTargetHeatingCoolingState() === this.platform.Characteristic.TargetHeatingCoolingState.COOL) {
+      temp = this.deviceStatus.status.thermostatCoolingSetpoint.coolingSetpoint.value;
+    } else {
+      temp = this.deviceStatus.status.thermostatHeatingSetpoint.heatingSetpoint.value;
+    }
+    if (temp === null || temp === undefined) {
+      throw(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.RESOURCE_DOES_NOT_EXIST));
+    }
+    if (this.units === 'F') {
+      temp = (temp - 32) * (5 / 9); // Convert to C
+    }
+    this.targetTemperature = temp;
+    return temp;
   }
 
   async setTargetTemperature(value: CharacteristicValue) {
