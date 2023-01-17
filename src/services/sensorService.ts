@@ -8,6 +8,8 @@ export abstract class SensorService extends BaseService {
     return null;
   };
 
+  pollingTimer: NodeJS.Timer | void | undefined;
+
   characteristic: WithUUID<new () => Characteristic>|undefined;
 
   constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[],
@@ -32,7 +34,7 @@ export abstract class SensorService extends BaseService {
     }
 
     if (pollSensorsSeconds > 0) {
-      this.multiServiceAccessory.startPollingState(pollSensorsSeconds, this.getSensorState.bind(this), this.service,
+      this.pollingTimer = this.multiServiceAccessory.startPollingState(pollSensorsSeconds, this.getSensorState.bind(this), this.service,
         sensorCharacteristic);
     }
 
@@ -54,8 +56,13 @@ export abstract class SensorService extends BaseService {
             resolve(value);
             return;
           } catch(error) {
-            this.log.error(`Bad status from ${this.name}`);
-            reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+            this.log.error(`Bad status from ${this.name}.  Removing this service.`);
+            // Stop polling and remove service
+            if (this.pollingTimer) {
+              clearInterval(this.pollingTimer);
+            }
+            this.accessory.removeService(this.service);
+            reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.INVALID_VALUE_IN_REQUEST));
             return;
           }
         } else {

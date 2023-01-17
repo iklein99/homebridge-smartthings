@@ -43,6 +43,8 @@ export abstract class BasePlatformAccessory {
   get id() {
     return this.accessory.UUID;
   }
+  protected statusQueryInProgress = false;
+  protected lastStatusResult = true;
 
   constructor(
     platform: IKHomeBridgeHomebridgePlatform,
@@ -97,18 +99,29 @@ export abstract class BasePlatformAccessory {
     return new Promise((resolve) => {
       this.log.debug(`Refreshing status for ${this.name} - current timestamp is ${this.deviceStatus.timestamp}`);
       if ((this.deviceStatus.status === undefined) || (Date.now() - this.deviceStatus.timestamp > 5000)) {
+        // If there is already a call to smartthings to update status for this device, don't issue another one until
+        // we return from that.
+        if (this.statusQueryInProgress){
+          this.log.debug(`Status query already in progress for ${this.name}.  Waiting...`);
+          this.waitFor(() => !this.statusQueryInProgress).then(() => resolve(this.lastStatusResult));
+          return;
+        }
         this.log.debug(`Calling Smartthings to get an update for ${this.name}`);
+        this.statusQueryInProgress = true;
         this.failureCount = 0;
         this.waitFor(() => this.commandInProgress === false).then(() => {
+          this.lastStatusResult = true;
           this.axInstance.get(this.statusURL).then((res) => {
             if (res.data.components.main !== undefined) {
               this.deviceStatus.status = res.data.components.main;
               this.deviceStatus.timestamp = Date.now();
               this.log.debug(`Updated status for ${this.name}: ${JSON.stringify(this.deviceStatus.status)}`);
+              this.statusQueryInProgress = false;
               resolve(true);
             } else {
               this.log.debug(`No status returned for ${this.name}`);
-              resolve(false);
+              this.statusQueryInProgress = false;
+              resolve(this.lastStatusResult = false);
             }
           }).catch(error => {
             this.failureCount++;
@@ -118,7 +131,8 @@ export abstract class BasePlatformAccessory {
               this.giveUpTime = Date.now();
               this.online = false;
             }
-            resolve(false);
+            this.statusQueryInProgress = false;
+            resolve(this.lastStatusResult = false);
           });
         });
       } else {
@@ -129,13 +143,13 @@ export abstract class BasePlatformAccessory {
 
   protected startPollingState(pollSeconds: number, getValue: () => Promise<CharacteristicValue>, service: Service,
     chracteristic: WithUUID<new () => Characteristic>, targetStateCharacteristic?: WithUUID<new () => Characteristic>,
-    getTargetState?: () => Promise<CharacteristicValue>) {
+    getTargetState?: () => Promise<CharacteristicValue>):NodeJS.Timer|void {
 
     if (this.platform.config.WebhookToken && this.platform.config.WebhookToken !== '') {
       return;  // Don't poll if we have a webhook token
     }
     if (pollSeconds > 0) {
-      setInterval(() => {
+      return setInterval(() => {
         // If we are in the middle of a commmand call, or it hasn't been at least 10 seconds, we don't want to poll.
         if (this.commandInProgress || Date.now() - this.lastCommandCompleted < 20 * 1000) {
           // Skip polling until command is complete
@@ -221,11 +235,11 @@ export abstract class BasePlatformAccessory {
       return;
     }
 
-    this.log.debug(`${this.name} command is waiting.`);
+    this.log.debug(`${this.name} command or request is waiting...`);
     return new Promise(resolve => {
       const interval = setInterval(() => {
         if (condition()) {
-          this.log.debug(`${this.name} command is proceeding.`);
+          this.log.debug(`${this.name} command or request is proceeding.`);
           clearInterval(interval);
           resolve();
         }

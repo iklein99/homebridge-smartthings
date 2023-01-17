@@ -13,6 +13,27 @@ This is yet another smartthings plugin for Homebridge.  This requires no access 
 require a lot of work to install.  It will discover devices automatically as well as unregister devices that are removed
 from your smarttthings network.  This is currently under development.
 
+## Fixed in 1.4.23
+* If a sensor service doesn't return a valid value, it will be removed from the device.
+* Fixed some state update management in the Thermostat service.
+
+## Fixed in 1.4.22
+* Fixed some bugs with thermostat support.  Note that this one is a tough one to test with one thermostat.  Looking for ongoing 
+feedback from everyone.
+
+## Added in 1.4.21
+* Added support for thermostats.
+
+## Fixed in 1.4.20
+* Will wait to request status update from Smartthings if a request is waiting.  In some instances more than one request
+come around the same time resulting in redundant requests sent to smartthings while others are in progress.
+
+## New in 1.4.19
+* Added back support for Window Shades that support the "WindowShadeLevel" capability.
+
+## Fixed in 1.4.16 / 1.4.17 / 1.4.18
+* Fixed issue with some lights could not handle setting hue and saturation individually
+
 ## Fixed in 1.4.15
 * Improvements to timing issued resulting in switch status flip flopping after a command is sent.
 
