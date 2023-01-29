@@ -76,7 +76,7 @@ export class SubscriptionHandler {
       } catch (error) {
         //this.shutdown = true;
         this.log.error(`Could not connect to web hook service: ${error}.  Will retry`);
-        await wait(WH_CONNECT_RETRY_MINUTES * 60  * 1000);
+        await wait(WH_CONNECT_RETRY_MINUTES * 60);
       }
     }
   }

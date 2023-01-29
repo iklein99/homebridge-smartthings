@@ -16,16 +16,6 @@ export class LightService extends BaseService {
 
   requireSetColor = false;
 
-  // There is a device that can't handle sethue and setsaturation separately and requires both
-  // args using setcolor.
-
-  currentColor = {
-    hue: 0,
-    saturation: 0,
-  };
-
-  requireSetColor = false;
-
   constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[],
     multiServiceAccessory: MultiServiceAccessory,
     name: string, deviceStatus) {

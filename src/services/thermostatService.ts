@@ -2,6 +2,7 @@ import { PlatformAccessory, CharacteristicValue } from 'homebridge';
 import { IKHomeBridgeHomebridgePlatform } from '../platform';
 import { BaseService } from './baseService';
 import { MultiServiceAccessory } from '../multiServiceAccessory';
+import { ShortEvent } from '../webhook/subscriptionHandler';
 
 export class ThermostatService extends BaseService {
   targetHeatingCoolingState: any;
@@ -259,4 +260,34 @@ export class ThermostatService extends BaseService {
     this.log.debug(`Received request to set display units to ${value}.  No equivalent in Smartthings...`);
     return;
   }
+
+  public processEvent(event: ShortEvent): void {
+    this.log.debug(`Updating ${event.attribute} for ${this.name} from event to ${event.value}`);
+    let characteristic = this.platform.Characteristic.TargetTemperature;
+    let value: CharacteristicValue;
+
+    if (event.attribute === 'heatingSetpoint' || event.attribute === 'coolingSetpoint') {
+      value = this.units === 'F' ? (event.value - 32) * (5 / 9): event.value;
+    } else {
+      characteristic = this.platform.Characteristic.TargetHeatingCoolingState;
+      switch (event.value) {
+        case 'cool':
+          value = this.platform.Characteristic.TargetHeatingCoolingState.COOL;
+          break;
+
+        case 'heat':
+          value = this.platform.Characteristic.TargetHeatingCoolingState.HEAT;
+          break;
+
+        case 'auto':
+          value = this.platform.Characteristic.TargetHeatingCoolingState.AUTO;
+          break;
+
+        default:
+          value = this.platform.Characteristic.TargetHeatingCoolingState.OFF;
+      }
+    }
+    this.service.updateCharacteristic(characteristic, value);
+  }
+
 }

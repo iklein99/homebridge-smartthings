@@ -40,11 +40,12 @@ export abstract class BasePlatformAccessory {
   protected commandInProgress = false;
   protected lastCommandCompleted = 0;
 
+  protected statusQueryInProgress = false;
+  protected lastStatusResult = true;
+
   get id() {
     return this.accessory.UUID;
   }
-  protected statusQueryInProgress = false;
-  protected lastStatusResult = true;
 
   constructor(
     platform: IKHomeBridgeHomebridgePlatform,
