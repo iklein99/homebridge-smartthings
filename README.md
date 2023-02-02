@@ -13,6 +13,10 @@ This is yet another smartthings plugin for Homebridge.  This requires no access 
 require a lot of work to install.  It will discover devices automatically as well as unregister devices that are removed
 from your smarttthings network.  This is currently under development.
 
+## New in 1.5.0
+Support for SmartThings webhook to support real-time update of device state changes.  Support for webhooks is in closed beta at 
+the moment, but will be made available soon.  
+
 ## Fixed in 1.4.23
 * If a sensor service doesn't return a valid value, it will be removed from the device.
 * Fixed some state update management in the Thermostat service.
@@ -162,13 +166,22 @@ Garage Door Opener, Locks and Window Shades that support the WindowShadeLevel co
 You will need to create a Smartthings personal access token.  You can do that here: https://account.smartthings.com/tokens.  Create a
 new token and make sure it has all of the device permissions, and if you want to use the Ignore Locations feature, you must include the List Locations (r:locations) permission.  Save your token and add it to the configuration.
 <br>
+By configuring the WebhookToken, the plugin will attempt to connect to the SmartThings
+Webhook Server that we're running and wait for events.  This will result in 
+the plugin ignoring the poll settings as polling will not occur.
+<br>
 This section should be added to the platforms array in your config.json file, but you can now edit using the config UI:
 <pre>
         {
             "Name": "Smartthings Plugin",
             "AccessToken": "INSERT YOUR PERSONAL ACCESS TOKEN HERE",
+            "WebhookToken: "INSERT WEBHOOK TOKEN HERE",
             "BaseURL": "https://api.smartthings.com/v1",
             "GarageDoorMaxPoll": 40,
+            "PollLocksSeconds": 15,
+            "PollDoorsSeconds": 15,
+            "PollSensorsSeconds": 5,
+            "PollSwitchesAndLightsSeconds": 15
             "platform": "HomeBridgeSmartThings",
             "IgnoreLocations": [
                  "My location 1",
