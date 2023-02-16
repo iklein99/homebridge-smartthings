@@ -1,17 +1,16 @@
 import { PlatformAccessory, CharacteristicValue } from 'homebridge';
 import { IKHomeBridgeHomebridgePlatform } from '../platform';
 import { BaseService } from './baseService';
-import { MultiServiceAccessory } from '../multiServiceAccessory';
+import { BaseAccessory } from '../accessory/baseAccessory';
 import { ShortEvent } from '../webhook/subscriptionHandler';
 
 export class LockService extends BaseService {
   private targetState = 0;
   private lockInTransitionStart = 0;
 
-  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[],
-    multiServiceAccessory: MultiServiceAccessory,
-    name: string, deviceStatus) {
-    super(platform, accessory, capabilities, multiServiceAccessory, name, deviceStatus);
+  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[], componentId: string,
+    baseAccessory: BaseAccessory, name: string, deviceStatus) {
+    super(platform, accessory, capabilities, componentId, baseAccessory, name, deviceStatus);
 
     this.setServiceType(platform.Service.LockMechanism);
     // Set the event handlers
@@ -40,7 +39,7 @@ export class LockService extends BaseService {
     }
 
     if (pollLocksSeconds > 0) {
-      multiServiceAccessory.startPollingState(pollLocksSeconds, this.getLockCurrentState.bind(this), this.service,
+      baseAccessory.startPollingState(pollLocksSeconds, this.getLockCurrentState.bind(this), this.service,
         platform.Characteristic.LockCurrentState,
         this.platform.Characteristic.LockTargetState, this.getLockTargetState.bind(this));
     }
@@ -58,7 +57,7 @@ export class LockService extends BaseService {
             reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
             return;
           }
-          this.targetState = this.deviceStatus.status.lock.lock.value === 'locked' ?
+          this.targetState = this.deviceStatus.status[this.componentId].lock.lock.value === 'locked' ?
             this.platform.Characteristic.LockTargetState.SECURED :
             this.platform.Characteristic.LockTargetState.UNSECURED;
           this.log.debug(`Reset ${this.name} to ${this.targetState}`);
@@ -76,13 +75,13 @@ export class LockService extends BaseService {
 
     this.targetState = value as number;
 
-    if (!this.multiServiceAccessory.isOnline) {
+    if (!this.baseAccessory.isOnline) {
       this.log.error(this.name + ' is offline');
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
     this.lockInTransitionStart = Date.now();
     this.service.updateCharacteristic(this.platform.Characteristic.LockTargetState, value);
-    this.multiServiceAccessory.sendCommand('lock', value ? 'lock' : 'unlock').then((success) => {
+    this.baseAccessory.sendCommand(this.componentId, 'lock', value ? 'lock' : 'unlock').then((success) => {
       if (success) {
         this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
         this.deviceStatus.timestamp = 0; // Force refresh
@@ -102,7 +101,7 @@ export class LockService extends BaseService {
     return new Promise((resolve, reject) => {
       this.getStatus().then(success => {
         if (success) {
-          const lockState = this.deviceStatus.status.lock.lock.value;
+          const lockState = this.deviceStatus.status[this.componentId].lock.lock.value;
           this.log.debug(`LockState value from ${this.name}: ${lockState}`);
           resolve(this.mapLockState(lockState));
         } else {

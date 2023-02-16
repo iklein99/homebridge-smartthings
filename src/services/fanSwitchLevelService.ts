@@ -1,15 +1,14 @@
 import { PlatformAccessory, CharacteristicValue } from 'homebridge';
 import { IKHomeBridgeHomebridgePlatform } from '../platform';
 import { BaseService } from './baseService';
-import { MultiServiceAccessory } from '../multiServiceAccessory';
+import { BaseAccessory } from '../accessory/baseAccessory';
 import { ShortEvent } from '../webhook/subscriptionHandler';
 
 export class FanSwitchLevelService extends BaseService {
 
-  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilitites: string[],
-    multiServiceAccessory: MultiServiceAccessory,
-    name: string, deviceStatus) {
-    super(platform, accessory, capabilitites, multiServiceAccessory, name, deviceStatus);
+  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[], componentId: string,
+    baseAccessory: BaseAccessory, name: string, deviceStatus) {
+    super(platform, accessory, capabilities, componentId, baseAccessory, name, deviceStatus);
     this.setServiceType(platform.Service.Fan);
 
     // Set the event handlers
@@ -28,9 +27,9 @@ export class FanSwitchLevelService extends BaseService {
     }
 
     if (pollSwitchesAndLightsSeconds > 0) {
-      multiServiceAccessory.startPollingState(pollSwitchesAndLightsSeconds, this.getSwitchState.bind(this), this.service,
+      baseAccessory.startPollingState(pollSwitchesAndLightsSeconds, this.getSwitchState.bind(this), this.service,
         platform.Characteristic.On);
-      multiServiceAccessory.startPollingState(pollSwitchesAndLightsSeconds, this.getLevel.bind(this), this.service,
+      baseAccessory.startPollingState(pollSwitchesAndLightsSeconds, this.getLevel.bind(this), this.service,
         platform.Characteristic.RotationSpeed);
     }
   }
@@ -39,11 +38,11 @@ export class FanSwitchLevelService extends BaseService {
   async setSwitchState(value: CharacteristicValue) {
     this.log.debug('Received setSwitchState(' + value + ') event for ' + this.name);
 
-    if (!this.multiServiceAccessory.isOnline) {
+    if (!this.baseAccessory.isOnline) {
       this.log.error(this.name + ' is offline');
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
-    this.multiServiceAccessory.sendCommand('switch', value ? 'on' : 'off').then((success) => {
+    this.baseAccessory.sendCommand(this.componentId, 'switch', value ? 'on' : 'off').then((success) => {
       if (success) {
         this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
       } else {
@@ -61,7 +60,7 @@ export class FanSwitchLevelService extends BaseService {
     return new Promise((resolve, reject) => {
       this.getStatus().then(success => {
         if (success) {
-          const switchState = this.deviceStatus.status.switch.switch.value;
+          const switchState = this.deviceStatus.status[this.componentId].switch.switch.value;
           this.log.debug(`SwitchState value from ${this.name}: ${switchState}`);
           resolve(switchState === 'on');
         } else {
@@ -75,12 +74,12 @@ export class FanSwitchLevelService extends BaseService {
     this.log.debug('Received setLevel(' + value + ') event for ' + this.name);
 
     return new Promise<void>((resolve, reject) => {
-      if (!this.multiServiceAccessory.isOnline()) {
+      if (!this.baseAccessory.isOnline()) {
         this.log.error(this.accessory.context.device.label + ' is offline');
         return reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       }
 
-      this.multiServiceAccessory.sendCommand('switchLevel', 'setLevel', [value]).then(success => {
+      this.baseAccessory.sendCommand(this.componentId, 'switchLevel', 'setLevel', [value]).then(success => {
         if (success) {
           this.log.debug('setLevel(' + value + ') SUCCESSFUL for ' + this.name);
           this.deviceStatus.timestamp = 0;
@@ -97,7 +96,7 @@ export class FanSwitchLevelService extends BaseService {
     this.log.debug('Received getLevel() event for ' + this.name);
     let level = 0;
     return new Promise<CharacteristicValue>((resolve, reject) => {
-      if (!this.multiServiceAccessory.isOnline()) {
+      if (!this.baseAccessory.isOnline()) {
         this.log.error(this.accessory.context.device.label + ' is offline');
         return reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       }
@@ -108,8 +107,8 @@ export class FanSwitchLevelService extends BaseService {
           return reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         }
 
-        if (this.deviceStatus.status.switchLevel.level.value !== undefined) {
-          level = this.deviceStatus.status.switchLevel.level.value;
+        if (this.deviceStatus.status[this.componentId].switchLevel.level.value !== undefined) {
+          level = this.deviceStatus.status[this.componentId].switchLevel.level.value;
           this.log.debug('getLevel() SUCCESSFUL for ' + this.name + '. value = ' + level);
           resolve(level);
 

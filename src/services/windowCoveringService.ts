@@ -1,7 +1,7 @@
 import { PlatformAccessory, CharacteristicValue } from 'homebridge';
 import { IKHomeBridgeHomebridgePlatform } from '../platform';
 import { BaseService } from './baseService';
-import { MultiServiceAccessory } from '../multiServiceAccessory';
+import { BaseAccessory } from '../accessory/baseAccessory';
 
 export class WindowCoveriingService extends BaseService {
   private targetPosition = 0;
@@ -12,10 +12,9 @@ export class WindowCoveriingService extends BaseService {
     stopped: this.platform.Characteristic.PositionState.STOPPED,
   };
 
-  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[],
-    multiServiceAccessory: MultiServiceAccessory,
-    name: string, deviceStatus) {
-    super(platform, accessory, capabilities, multiServiceAccessory, name, deviceStatus);
+  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[], componentId: string,
+    baseAccessory: BaseAccessory, name: string, deviceStatus) {
+    super(platform, accessory, capabilities, componentId, baseAccessory, name, deviceStatus);
 
     this.setServiceType(platform.Service.WindowCovering);
     // Set the event handlers
@@ -34,9 +33,9 @@ export class WindowCoveriingService extends BaseService {
     }
 
     if (pollSwitchesAndLightsSeconds > 0) {
-      multiServiceAccessory.startPollingState(pollSwitchesAndLightsSeconds, this.getCurrentPosition.bind(this), this.service,
+      baseAccessory.startPollingState(pollSwitchesAndLightsSeconds, this.getCurrentPosition.bind(this), this.service,
         platform.Characteristic.CurrentPosition, platform.Characteristic.TargetPosition, this.getTargetPosition.bind(this));
-      multiServiceAccessory.startPollingState(pollSwitchesAndLightsSeconds, this.getCurrentPositionState.bind(this), this.service,
+      baseAccessory.startPollingState(pollSwitchesAndLightsSeconds, this.getCurrentPositionState.bind(this), this.service,
         platform.Characteristic.PositionState);
     }
 
@@ -52,12 +51,12 @@ export class WindowCoveriingService extends BaseService {
 
     this.targetPosition = value as number;
 
-    if (!this.multiServiceAccessory.isOnline()) {
+    if (!this.baseAccessory.isOnline()) {
       this.log.error(this.name + ' is offline');
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
 
-    this.multiServiceAccessory.sendCommand('windowShadeLevel', 'setShadeLevel', [value])
+    this.baseAccessory.sendCommand(this.componentId, 'windowShadeLevel', 'setShadeLevel', [value])
       .then(() => {
         this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
         // this.pollTry = 0;
@@ -173,7 +172,7 @@ export class WindowCoveriingService extends BaseService {
 
     return new Promise<CharacteristicValue>((resolve, reject) => {
 
-      if (!this.multiServiceAccessory.isOnline()) {
+      if (!this.baseAccessory.isOnline()) {
         this.log.error(this.name + ' is offline');
         return reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       }
@@ -181,7 +180,7 @@ export class WindowCoveriingService extends BaseService {
       this.getStatus().then(success => {
 
         if (success) {
-          const position = this.deviceStatus.status.windowShadeLevel.shadeLevel.value;
+          const position = this.deviceStatus.status[this.componentId].windowShadeLevel.shadeLevel.value;
           this.log.debug('onGet() SUCCESSFUL for ' + this.name + '. value = ' + position);
           resolve(position);
         } else {

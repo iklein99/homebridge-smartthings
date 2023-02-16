@@ -1,17 +1,15 @@
 import { PlatformAccessory } from 'homebridge';
 import { IKHomeBridgeHomebridgePlatform } from '../platform';
-import { MultiServiceAccessory } from '../multiServiceAccessory';
+import { BaseAccessory } from '../accessory/baseAccessory';
 import { SensorService } from './sensorService';
 import { ShortEvent } from '../webhook/subscriptionHandler';
 
 export class CarbonMonoxideDetectorService extends SensorService {
   serviceName = 'CarbonMonixideDetector';
 
-  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[],
-    multiServiceAccessory: MultiServiceAccessory,
-    name: string, deviceStatus) {
-
-    super(platform, accessory, capabilities, multiServiceAccessory, name, deviceStatus);
+  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[], componentId: string,
+    baseAccessory: BaseAccessory, name: string, deviceStatus) {
+    super(platform, accessory, capabilities, componentId, baseAccessory, name, deviceStatus);
 
     this.initService(platform.Service.CarbonMonoxideSensor,
       platform.Characteristic.CarbonMonoxideDetected,

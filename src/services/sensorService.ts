@@ -1,7 +1,7 @@
 import { PlatformAccessory, CharacteristicValue, WithUUID, Characteristic, Service } from 'homebridge';
 import { IKHomeBridgeHomebridgePlatform } from '../platform';
 import { BaseService } from './baseService';
-import { MultiServiceAccessory } from '../multiServiceAccessory';
+import { BaseAccessory } from '../accessory/baseAccessory';
 
 export abstract class SensorService extends BaseService {
   statusTranslation: (status) => CharacteristicValue | null = ()=> {
@@ -12,10 +12,9 @@ export abstract class SensorService extends BaseService {
 
   characteristic: WithUUID<new () => Characteristic>|undefined;
 
-  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[],
-    multiServiceAccessory: MultiServiceAccessory,
-    name: string, deviceStatus) {
-    super(platform, accessory, capabilities, multiServiceAccessory, name, deviceStatus);
+  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[], componentId: string,
+    baseAccessory: BaseAccessory, name: string, deviceStatus) {
+    super(platform, accessory, capabilities, componentId, baseAccessory, name, deviceStatus);
   }
 
   protected initService(sensorService: WithUUID<typeof Service>, sensorCharacteristic: WithUUID<new () => Characteristic>,
@@ -34,7 +33,7 @@ export abstract class SensorService extends BaseService {
     }
 
     if (pollSensorsSeconds > 0) {
-      this.pollingTimer = this.multiServiceAccessory.startPollingState(pollSensorsSeconds, this.getSensorState.bind(this), this.service,
+      this.pollingTimer = this.baseAccessory.startPollingState(pollSensorsSeconds, this.getSensorState.bind(this), this.service,
         sensorCharacteristic);
     }
 

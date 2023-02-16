@@ -1,19 +1,17 @@
 import { PlatformAccessory, CharacteristicValue } from 'homebridge';
 import { IKHomeBridgeHomebridgePlatform } from '../platform';
 import { BaseService } from './baseService';
-import { MultiServiceAccessory } from '../multiServiceAccessory';
+import { BaseAccessory } from '../accessory/baseAccessory';
 import { ShortEvent } from '../webhook/subscriptionHandler';
 
+// This can either be a Door or Garage Door Opener
 export class DoorService extends BaseService {
   private targetState = this.platform.Characteristic.TargetDoorState.OPEN;
   private doorInTransitionStart = 0;
 
-  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[],
-    multiServiceAccessory: MultiServiceAccessory,
-    name: string, deviceStatus) {
-    // This can either be a Door or Garage Door Opener
-
-    super(platform, accessory, capabilities, multiServiceAccessory, name, deviceStatus);
+  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[], componentId: string,
+    baseAccessory: BaseAccessory, name: string, deviceStatus) {
+    super(platform, accessory, capabilities, componentId, baseAccessory, name, deviceStatus);
     this.setServiceType(platform.Service.GarageDoorOpener);
     // Set the event handlers
     this.log.debug(`Adding DoorService to ${this.name}`);
@@ -43,7 +41,7 @@ export class DoorService extends BaseService {
     }
 
     if (PollDoorsSeconds > 0) {
-      multiServiceAccessory.startPollingState(PollDoorsSeconds, this.getCurrentDoorState.bind(this), this.service,
+      baseAccessory.startPollingState(PollDoorsSeconds, this.getCurrentDoorState.bind(this), this.service,
         platform.Characteristic.CurrentDoorState);
       //this.platform.Characteristic.TargetDoorState, this.getTargetDoorState.bind(this));
     }
@@ -61,8 +59,8 @@ export class DoorService extends BaseService {
             reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
             return;
           }
-          this.targetState = this.deviceStatus.status.doorControl.door.value === 'closed' ||
-            this.deviceStatus.status.doorControl.door.value === 'closing' ?
+          this.targetState = this.deviceStatus.status[this.componentId].doorControl.door.value === 'closed' ||
+            this.deviceStatus.status[this.componentId].doorControl.door.value === 'closing' ?
             this.platform.Characteristic.TargetDoorState.CLOSED :
             this.platform.Characteristic.TargetDoorState.OPEN;
           this.log.debug(`Reset ${this.name} to ${this.targetState}`);
@@ -80,7 +78,7 @@ export class DoorService extends BaseService {
 
     this.targetState = value as number;
 
-    if (!this.multiServiceAccessory.isOnline) {
+    if (!this.baseAccessory.isOnline) {
       this.log.error(this.name + ' is offline');
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
@@ -93,7 +91,7 @@ export class DoorService extends BaseService {
     } else {
       command = 'open';
     }
-    this.multiServiceAccessory.sendCommand('doorControl', command).then((success) => {
+    this.baseAccessory.sendCommand(this.componentId, 'doorControl', command).then((success) => {
       if (success) {
         this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
         this.deviceStatus.timestamp = 0;  // Force refresh
@@ -113,7 +111,7 @@ export class DoorService extends BaseService {
     return new Promise((resolve, reject) => {
       this.getStatus().then(success => {
         if (success) {
-          const doorState = this.deviceStatus.status.doorControl.door.value;
+          const doorState = this.deviceStatus.status[this.componentId].doorControl.door.value;
           this.log.debug(`DoorState value from ${this.name}: ${doorState}`);
 
           resolve(this.mapDoorState(doorState));

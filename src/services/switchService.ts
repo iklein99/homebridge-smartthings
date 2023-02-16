@@ -1,15 +1,14 @@
 import { PlatformAccessory, CharacteristicValue } from 'homebridge';
 import { IKHomeBridgeHomebridgePlatform } from '../platform';
 import { BaseService } from './baseService';
-import { MultiServiceAccessory } from '../multiServiceAccessory';
+import { BaseAccessory } from '../accessory/baseAccessory';
 import { ShortEvent } from '../webhook/subscriptionHandler';
 
 export class SwitchService extends BaseService {
 
-  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities:string[],
-    multiServiceAccessory: MultiServiceAccessory,
-    name: string, deviceStatus) {
-    super(platform, accessory, capabilities, multiServiceAccessory, name, deviceStatus);
+  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[], componentId: string,
+    baseAccessory: BaseAccessory, name: string, deviceStatus) {
+    super(platform, accessory, capabilities, componentId, baseAccessory, name, deviceStatus);
 
     this.setServiceType(platform.Service.Switch);
     // Set the event handlers
@@ -24,7 +23,7 @@ export class SwitchService extends BaseService {
     }
 
     if (pollSwitchesAndLightsSeconds > 0) {
-      multiServiceAccessory.startPollingState(pollSwitchesAndLightsSeconds, this.getSwitchState.bind(this), this.service,
+      baseAccessory.startPollingState(pollSwitchesAndLightsSeconds, this.getSwitchState.bind(this), this.service,
         platform.Characteristic.On);
     }
   }
@@ -33,11 +32,11 @@ export class SwitchService extends BaseService {
   async setSwitchState(value: CharacteristicValue) {
     this.log.debug('Received setSwitchState(' + value + ') event for ' + this.name);
 
-    if (!this.multiServiceAccessory.isOnline) {
+    if (!this.baseAccessory.isOnline) {
       this.log.error(this.name + ' is offline');
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
-    this.multiServiceAccessory.sendCommand('switch', value ? 'on' : 'off').then((success) => {
+    this.baseAccessory.sendCommand(this.componentId, 'switch', value ? 'on' : 'off').then((success) => {
       if (success) {
         this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
         this.deviceStatus.timestamp = 0;  // Force a refresh next query.
@@ -58,7 +57,7 @@ export class SwitchService extends BaseService {
         if (success) {
           let switchState;
           try {
-            switchState = this.deviceStatus.status.switch.switch.value;
+            switchState = this.deviceStatus.status[this.componentId].switch.switch.value;
           } catch(error) {
             this.log.error(`Missing switch status from ${this.name}`);
           }

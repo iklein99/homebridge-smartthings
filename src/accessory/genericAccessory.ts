@@ -1,28 +1,28 @@
 import { PlatformAccessory, Characteristic, CharacteristicValue, Service, WithUUID } from 'homebridge';
 //import axios = require('axios');
-import { IKHomeBridgeHomebridgePlatform } from './platform';
-import { BaseService } from './services/baseService';
-import { BasePlatformAccessory } from './basePlatformAccessory';
-import { MotionService } from './services/motionService';
-import { BatteryService } from './services/batteryService';
-import { TemperatureService } from './services/temperatureService';
-import { HumidityService } from './services/humidityService';
-import { LightSensorService } from './services/lightSensorService';
-import { ContactSensorService } from './services/contactSensorService';
-import { LockService } from './services/lockService';
-import { DoorService } from './services/doorService';
-import { SwitchService } from './services/switchService';
-import { LightService } from './services/lightService';
-import { FanSwitchLevelService } from './services/fanSwitchLevelService';
-import { OccupancySensorService } from './services/occupancySensorService';
-import { LeakDetectorService } from './services/leakDetector';
-import { SmokeDetectorService } from './services/smokeDetector';
-import { CarbonMonoxideDetectorService } from './services/carbonMonoxideDetector';
-import { ValveService } from './services/valveService';
-import { ShortEvent } from './webhook/subscriptionHandler';
-import { FanSpeedService } from './services/fanSpeedService';
-import { WindowCoveriingService } from './services/windowCoveringService';
-import { ThermostatService } from './services/thermostatService';
+import { IKHomeBridgeHomebridgePlatform } from '../platform';
+import { BaseService } from '../services/baseService';
+import { BaseAccessory } from './baseAccessory';
+import { MotionService } from '../services/motionService';
+import { BatteryService } from '../services/batteryService';
+import { TemperatureService } from '../services/temperatureService';
+import { HumidityService } from '../services/humidityService';
+import { LightSensorService } from '../services/lightSensorService';
+import { ContactSensorService } from '../services/contactSensorService';
+import { LockService } from '../services/lockService';
+import { DoorService } from '../services/doorService';
+import { SwitchService } from '../services/switchService';
+import { LightService } from '../services/lightService';
+import { FanSwitchLevelService } from '../services/fanSwitchLevelService';
+import { OccupancySensorService } from '../services/occupancySensorService';
+import { LeakDetectorService } from '../services/leakDetector';
+import { SmokeDetectorService } from '../services/smokeDetector';
+import { CarbonMonoxideDetectorService } from '../services/carbonMonoxideDetector';
+import { ValveService } from '../services/valveService';
+import { ShortEvent } from '../webhook/subscriptionHandler';
+import { FanSpeedService } from '../services/fanSpeedService';
+import { WindowCoveriingService } from '../services/windowCoveringService';
+import { ThermostatService } from '../services/thermostatService';
 
 
 /**
@@ -30,7 +30,7 @@ import { ThermostatService } from './services/thermostatService';
  * An instance of this class is created for each accessory your platform registers
  * Each accessory may expose multiple services of different service types.
  */
-export class MultiServiceAccessory extends BasePlatformAccessory {
+export class GenericAccessory extends BaseAccessory {
   //  service: Service;
   capabilities;
 
@@ -42,7 +42,7 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
   private services: BaseService[] = [];
 
   // Order of these matters.  Make sure secondary capabilities like 'battery' and 'contactSensor' are at the end.
-  private static capabilityMap = {
+  private static capabilityMap: {[key: string]: typeof BaseService} = {
     'doorControl': DoorService,
     'lock': LockService,
     // 'switch': SwitchService,
@@ -102,10 +102,11 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
   constructor(
     platform: IKHomeBridgeHomebridgePlatform,
     accessory: PlatformAccessory,
-    capabilities,
   ) {
     super(platform, accessory);
-    this.capabilities = capabilities;
+    const device = this.accessory.context.device;
+    const component = device.components.find(c => c.id === 'main') || device.components[0];
+    this.capabilities = component.capabilities;
 
     // Add services per capabilities
 
@@ -113,19 +114,20 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
     // determine what kind of device.  Fans, lights,
     // switches all have a switch capability and we need to add the correct one.
 
-    Object.keys(MultiServiceAccessory.capabilityMap).forEach((capability) => {
-      if (capabilities.find((c) => c.id === capability)) {
+    Object.keys(GenericAccessory.capabilityMap).forEach((capability) => {
+      if (this.capabilities.find((c) => c.id === capability)) {
         this.services.push(new (
-          MultiServiceAccessory.capabilityMap[capability])(this.platform, this.accessory, [capability], this, this.name, this.deviceStatus,
-        ));
+          GenericAccessory.capabilityMap[capability])(this.platform, this.accessory, [capability], component.id, this, this.name,
+          this.deviceStatus));
       }
     });
-    if (capabilities.find(c => (c.id === 'switch') || c.id === 'thermostatMode')) {
-      let service = this.findComboService(capabilities);
+    if (this.capabilities.find(c => (c.id === 'switch') || c.id === 'thermostatMode')) {
+      let service = this.findComboService(this.capabilities);
       if (service === undefined) {
         service = SwitchService;
       }
-      this.services.push(new service(this.platform, this.accessory, capabilities.map(c => c.id), this, this.name, this.deviceStatus));
+      this.services.push(new service(this.platform, this.accessory, this.capabilities.map(c => c.id), component.id, this, this.name,
+        this.deviceStatus));
     }
   }
 
@@ -137,7 +139,7 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
   public findComboService(deviceCapabilities): typeof BaseService | undefined {
     let service: typeof BaseService | undefined = undefined;
 
-    MultiServiceAccessory.comboCapabilityMap.forEach(entry => {
+    GenericAccessory.comboCapabilityMap.forEach(entry => {
       if (service === undefined) {
         let found = true;
         entry.capabilities.forEach(c => {
@@ -153,38 +155,22 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
     return service;
   }
 
-  public isOnline(): boolean {
-    return this.online;
-  }
-
   // Find return if a capability is supported by the multi-service accessory
   public static capabilitySupported(capability: string): boolean {
-    if (Object.keys(MultiServiceAccessory.capabilityMap).find(c => c === capability) || capability === 'switch') {
+    if (Object.keys(GenericAccessory.capabilityMap).find(c => c === capability) || capability === 'switch') {
       return true;
     } else {
       return false;
     }
   }
 
-  public async refreshStatus(): Promise<boolean> {
-    return super.refreshStatus();
-  }
-
-  public startPollingState(pollSeconds: number, getValue: () => Promise<CharacteristicValue>, service: Service,
-    chracteristic: WithUUID<new () => Characteristic>, targetStateCharacteristic?: WithUUID<new () => Characteristic>,
-    getTargetState?: () => Promise<CharacteristicValue>) {
-    return super.startPollingState(pollSeconds, getValue, service, chracteristic, targetStateCharacteristic, getTargetState);
-  }
-
   public processEvent(event: ShortEvent): void {
     this.log.debug(`Received events for ${this.name}`);
 
-    const service = this.services.find(s => s.capabilities.find(c => c === event.capability));
+    const service = this.services.find(s => s.findServiceCapability(event.capability));
 
     if (service) {
       service.processEvent(event);
     }
-
   }
-
 }

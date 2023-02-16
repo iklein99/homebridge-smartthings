@@ -1,15 +1,14 @@
 import { PlatformAccessory, CharacteristicValue } from 'homebridge';
 import { IKHomeBridgeHomebridgePlatform } from '../platform';
 import { BaseService } from './baseService';
-import { MultiServiceAccessory } from '../multiServiceAccessory';
+import { BaseAccessory } from '../accessory/baseAccessory';
 import { ShortEvent } from '../webhook/subscriptionHandler';
 
 export class ValveService extends BaseService {
 
-  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[],
-    multiServiceAccessory: MultiServiceAccessory,
-    name: string, deviceStatus) {
-    super(platform, accessory, capabilities, multiServiceAccessory, name, deviceStatus);
+  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[], componentId: string,
+    baseAccessory: BaseAccessory, name: string, deviceStatus) {
+    super(platform, accessory, capabilities, componentId, baseAccessory, name, deviceStatus);
 
     this.setServiceType(platform.Service.Valve);
     // Set the event handlers
@@ -33,7 +32,7 @@ export class ValveService extends BaseService {
           reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
           return;
         }
-        const valveState = this.deviceStatus.status.valve.valve.value;
+        const valveState = this.deviceStatus.status[this.componentId].valve.valve.value;
         this.log.debug(`Received valve value of ${valveState} from Smartthings`);
         resolve(valveState === 'open' ? this.platform.Characteristic.Active.ACTIVE : this.platform.Characteristic.Active.INACTIVE);
       });
@@ -44,12 +43,12 @@ export class ValveService extends BaseService {
   async setValveState(value: CharacteristicValue) {
     this.log.debug('Received setValveState(' + value + ') event for ' + this.name);
 
-    if (!this.multiServiceAccessory.isOnline) {
+    if (!this.baseAccessory.isOnline) {
       this.log.error(this.name + ' is offline');
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
     const command = value === this.platform.Characteristic.Active.ACTIVE ? 'open' : 'close';
-    this.multiServiceAccessory.sendCommand('valve', command).then((success) => {
+    this.baseAccessory.sendCommand(this.componentId, 'valve', command).then((success) => {
       if (success) {
         this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
         this.deviceStatus.timestamp = 0; // Force refresh

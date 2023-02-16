@@ -1,6 +1,6 @@
 import { PlatformAccessory, Logger, Service, WithUUID } from 'homebridge';
 import { ShortEvent } from '../webhook/subscriptionHandler';
-import { MultiServiceAccessory } from '../multiServiceAccessory';
+import { BaseAccessory } from '../accessory/baseAccessory';
 //import { BasePlatformAccessory } from '../basePlatformAccessory';
 import { IKHomeBridgeHomebridgePlatform } from '../platform';
 
@@ -10,39 +10,38 @@ export class BaseService {
   protected platform: IKHomeBridgeHomebridgePlatform;
   protected name = '';
   protected deviceStatus;
-  protected multiServiceAccessory: MultiServiceAccessory;
+  protected baseAccessory: BaseAccessory;
   protected service: Service;
-  public capabilities: string[];
+  protected capabilities: string[];
+  protected componentId: string;
 
-  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[],
-    multiServiceAccessory:MultiServiceAccessory,
+  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[], componentId: string,
+    baseAccessory:BaseAccessory,
     name: string, deviceStatus) {
     this.capabilities = capabilities;
+    this.componentId = componentId;
     this.accessory = accessory;
     // this.service = this.accessory.getService(platform.Service.MotionSensor) || this.accessory.addService(platform.Service.MotionSensor);
     this.platform = platform;
     this.log = platform.log;
-    this.multiServiceAccessory = multiServiceAccessory;
+    this.baseAccessory = baseAccessory;
     this.name = name;
     this.deviceStatus = deviceStatus;
     this.service = new platform.Service.Switch;  // Placeholder
   }
 
-  protected findCapability(capabilityToFind: string): boolean {
-    let component;
-    component = this.accessory.context.device.components.find(c => c.id === 'main');
-    if (component === undefined) {
-      component = this.accessory.context.device.components[0];
-    }
-
+  protected findComponentCapability(capabilityToFind: string): boolean {
+    const component = this.accessory.context.device.components.find(c => c.id === this.componentId);
     return component.capabilities.find(c => c.id === capabilityToFind);
   }
 
-  protected setServiceType(serviceType: WithUUID<typeof Service>) {
-    this.service = this.accessory.getService(serviceType) ||
-    this.accessory.addService(serviceType);
+  public findServiceCapability(capabilityToFind: string): boolean {
+    return this.capabilities.includes(capabilityToFind);
+  }
 
-    this.service.setCharacteristic(this.platform.Characteristic.Name, this.accessory.context.device.label);
+  protected setServiceType(serviceType: WithUUID<typeof Service>) {
+    this.service = this.accessory.getService(serviceType) || this.accessory.addService(serviceType);
+    this.service.setCharacteristic(this.platform.Characteristic.Name, this.name);
   }
 
   protected async getStatus():Promise<boolean> {
@@ -51,11 +50,11 @@ export class BaseService {
     // this.log.debug('Received getMotion() event for ' + this.name);
 
     return new Promise((resolve) => {
-      if (!this.multiServiceAccessory.isOnline()) {
+      if (!this.baseAccessory.isOnline()) {
         this.log.info(`${this.name} is offline`);
         resolve(false);
       }
-      this.multiServiceAccessory.refreshStatus()
+      this.baseAccessory.refreshStatus()
         .then(success => {
           if (!success) {
             resolve(false);

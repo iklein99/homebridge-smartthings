@@ -1,7 +1,7 @@
 import { PlatformAccessory, Logger, API, Characteristic, CharacteristicValue, Service, WithUUID } from 'homebridge';
 import axios = require('axios');
-import { IKHomeBridgeHomebridgePlatform } from './platform';
-import { ShortEvent } from './webhook/subscriptionHandler';
+import { IKHomeBridgeHomebridgePlatform } from '../platform';
+import { ShortEvent } from '../webhook/subscriptionHandler';
 
 type DeviceStatus = {
   timestamp: number;
@@ -13,7 +13,7 @@ type DeviceStatus = {
  * An instance of this class is created for each accessory your platform registers
  * Each accessory may expose multiple services of different service types.
  */
-export abstract class BasePlatformAccessory {
+export abstract class BaseAccessory {
   // protected service: Service;
 
   /**
@@ -92,11 +92,12 @@ export abstract class BasePlatformAccessory {
 
   public abstract processEvent(event: ShortEvent):void;
 
+  public isOnline(): boolean {
+    return this.online;
+  }
 
-  // Called by subclasses to refresh the status for the device.  Will only refresh if it has been more than
-  // 4 seconds since last refresh
-  //
-  protected async refreshStatus(): Promise<boolean> {
+  // Refresh the status for the device, if more than 4 seconds since last refresh
+  public async refreshStatus(): Promise<boolean> {
     return new Promise((resolve) => {
       this.log.debug(`Refreshing status for ${this.name} - current timestamp is ${this.deviceStatus.timestamp}`);
       if ((this.deviceStatus.status === undefined) || (Date.now() - this.deviceStatus.timestamp > 5000)) {
@@ -114,7 +115,7 @@ export abstract class BasePlatformAccessory {
           this.lastStatusResult = true;
           this.axInstance.get(this.statusURL).then((res) => {
             if (res.data.components.main !== undefined) {
-              this.deviceStatus.status = res.data.components.main;
+              this.deviceStatus.status = res.data.components;
               this.deviceStatus.timestamp = Date.now();
               this.log.debug(`Updated status for ${this.name}: ${JSON.stringify(this.deviceStatus.status)}`);
               this.statusQueryInProgress = false;
@@ -142,7 +143,7 @@ export abstract class BasePlatformAccessory {
     });
   }
 
-  protected startPollingState(pollSeconds: number, getValue: () => Promise<CharacteristicValue>, service: Service,
+  public startPollingState(pollSeconds: number, getValue: () => Promise<CharacteristicValue>, service: Service,
     chracteristic: WithUUID<new () => Characteristic>, targetStateCharacteristic?: WithUUID<new () => Characteristic>,
     getTargetState?: () => Promise<CharacteristicValue>):NodeJS.Timer|void {
 
@@ -189,21 +190,16 @@ export abstract class BasePlatformAccessory {
     }
   }
 
-  async sendCommand(capability: string, command: string, args?: unknown[]): Promise<boolean> {
+  async sendCommand(componentId: string, capability: string, command: string, args?: unknown[]): Promise<boolean> {
 
-    let cmd: unknown;
+    const cmd = {
+      component: componentId,
+      capability: capability,
+      command: command,
+    };
 
     if (args) {
-      cmd = {
-        capability: capability,
-        command: command,
-        arguments: args,
-      };
-    } else {
-      cmd = {
-        capability: capability,
-        command: command,
-      };
+      cmd['arguments'] = args;
     }
 
     const commandBody = JSON.stringify([cmd]);

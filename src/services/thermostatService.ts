@@ -1,7 +1,7 @@
 import { PlatformAccessory, CharacteristicValue } from 'homebridge';
 import { IKHomeBridgeHomebridgePlatform } from '../platform';
 import { BaseService } from './baseService';
-import { MultiServiceAccessory } from '../multiServiceAccessory';
+import { BaseAccessory } from '../accessory/baseAccessory';
 import { ShortEvent } from '../webhook/subscriptionHandler';
 
 export class ThermostatService extends BaseService {
@@ -10,18 +10,17 @@ export class ThermostatService extends BaseService {
   units = 'C';
   supportsOperatingState = false;
 
-  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[],
-    multiServiceAccessory: MultiServiceAccessory,
-    name: string, deviceStatus) {
-    super(platform, accessory, capabilities, multiServiceAccessory, name, deviceStatus);
+  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[], componentId: string,
+    baseAccessory: BaseAccessory, name: string, deviceStatus) {
+    super(platform, accessory, capabilities, componentId, baseAccessory, name, deviceStatus);
 
     this.setServiceType(platform.Service.Thermostat);
     // Set the event handlers
     this.log.debug(`Adding ThermostatService to ${this.name}`);
 
-    if (this.multiServiceAccessory.capabilities.find((c) => c.id === 'thermostatOperatingState')) {
-      this.supportsOperatingState = true;
-    }
+    // if (this.baseAccessory.context.capabilities.find((c) => c.id === 'thermostatOperatingState')) {
+    //   this.supportsOperatingState = true;
+    // }
     this.service.getCharacteristic(platform.Characteristic.CurrentHeatingCoolingState)
       .onGet(this.getCurrentHeatingCoolingState.bind(this));
     this.service.getCharacteristic(platform.Characteristic.TargetHeatingCoolingState)
@@ -52,11 +51,11 @@ export class ThermostatService extends BaseService {
     }
 
     if (pollSensors > 0) {
-      multiServiceAccessory.startPollingState(pollSensors, this.getCurrentHeatingCoolingState.bind(this), this.service,
+      baseAccessory.startPollingState(pollSensors, this.getCurrentHeatingCoolingState.bind(this), this.service,
         platform.Characteristic.CurrentHeatingCoolingState, platform.Characteristic.TargetHeatingCoolingState,
         this.getTargetHeatingCoolingState.bind(this));
 
-      multiServiceAccessory.startPollingState(pollSensors, this.getCurrentTemperature.bind(this), this.service,
+      baseAccessory.startPollingState(pollSensors, this.getCurrentTemperature.bind(this), this.service,
         platform.Characteristic.CurrentTemperature,
         platform.Characteristic.TargetTemperature, this.getTargetTemperature.bind(this));
     }
@@ -69,7 +68,7 @@ export class ThermostatService extends BaseService {
       this.getStatus().then(success => {
         let state;
         if (success) {
-          state = this.deviceStatus.status.thermostatMode.thermostatMode.value;
+          state = this.deviceStatus.status[this.componentId].thermostatMode.thermostatMode.value;
           if (state === null || state === undefined) {
             this.log.error(`Received invalid heating / cooling state from ${this.name}`);
             resolve(this.targetHeatingCoolingState);
@@ -104,7 +103,7 @@ export class ThermostatService extends BaseService {
   async setTargetHeatingCoolingState(value: CharacteristicValue) {
     this.log.debug('Received setTargetHeatingCoolingState(' + value + ') event for ' + this.name);
 
-    if (!this.multiServiceAccessory.isOnline) {
+    if (!this.baseAccessory.isOnline) {
       this.log.error(this.name + ' is offline');
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
@@ -130,7 +129,7 @@ export class ThermostatService extends BaseService {
         break;
     }
 
-    this.multiServiceAccessory.sendCommand('thermostatMode', cmd).then((success) => {
+    this.baseAccessory.sendCommand(this.componentId, 'thermostatMode', cmd).then((success) => {
       if (success) {
         this.log.debug('setTargetHeatingCoolingState(' + value + ') SUCCESSFUL for ' + this.name);
         //this.deviceStatus.timestamp = 0;  // Force a refresh next query.
@@ -151,7 +150,7 @@ export class ThermostatService extends BaseService {
         if (success) {
           let thermostatMode;
           try {
-            thermostatMode = this.deviceStatus.status.thermostatMode.thermostatMode.value;
+            thermostatMode = this.deviceStatus.status[this.componentId].thermostatMode.thermostatMode.value;
           } catch (error) {
             this.log.warn(`Missing thermostatMode from ${this.name}`);
             resolve(this.targetHeatingCoolingState);
@@ -184,20 +183,20 @@ export class ThermostatService extends BaseService {
     return new Promise((resolve) => {
       this.getStatus().then((success) => {
         if (success) {
-          if (this.deviceStatus.status.temperatureMeasurement.temperature.value === null ||
-            this.deviceStatus.status.temperatureMeasurement.temperature.value === undefined ||
-            this.deviceStatus.status.temperatureMeasurement.temperature.unit === null ||
-            this.deviceStatus.status.temperatureMeasurement.temperature.value === undefined) {
+          if (this.deviceStatus.status[this.componentId].temperatureMeasurement.temperature.value === null ||
+            this.deviceStatus.status[this.componentId].temperatureMeasurement.temperature.value === undefined ||
+            this.deviceStatus.status[this.componentId].temperatureMeasurement.temperature.unit === null ||
+            this.deviceStatus.status[this.componentId].temperatureMeasurement.temperature.value === undefined) {
             this.log.warn(`${this.name} returned bad value for status`);
             throw ('Bad Value');
           }
-          if (this.deviceStatus.status.temperatureMeasurement.temperature.unit === 'F') {
+          if (this.deviceStatus.status[this.componentId].temperatureMeasurement.temperature.unit === 'F') {
             this.log.debug('Converting temp to celcius');
             this.units = 'F';
-            resolve((this.deviceStatus.status.temperatureMeasurement.temperature.value as number - 32) * (5 / 9)); // Convert to Celcius
+            resolve((this.deviceStatus.status[this.componentId].temperatureMeasurement.temperature.value as number - 32) * (5 / 9)); // Convert to Celcius
           } else {
             this.units = 'C';
-            resolve(this.deviceStatus.status.temperatureMeasurement.temperature.value);
+            resolve(this.deviceStatus.status[this.componentId].temperatureMeasurement.temperature.value);
           }
         } else {
           throw (new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
@@ -211,9 +210,9 @@ export class ThermostatService extends BaseService {
     this.log.debug('Received GetTargetTemperature for ' + this.name);
     let temp;
     if (await this.getTargetHeatingCoolingState() === this.platform.Characteristic.TargetHeatingCoolingState.COOL) {
-      temp = this.deviceStatus.status.thermostatCoolingSetpoint.coolingSetpoint.value;
+      temp = this.deviceStatus.status[this.componentId].thermostatCoolingSetpoint.coolingSetpoint.value;
     } else {
-      temp = this.deviceStatus.status.thermostatHeatingSetpoint.heatingSetpoint.value;
+      temp = this.deviceStatus.status[this.componentId].thermostatHeatingSetpoint.heatingSetpoint.value;
     }
     if (temp === null || temp === undefined) {
       throw(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.RESOURCE_DOES_NOT_EXIST));
@@ -242,7 +241,7 @@ export class ThermostatService extends BaseService {
     // If the thermostat's units is Farenheit, then we need to convert from celcius
     const convertedTemp = this.units === 'F' ? (value as number * (9/5)) + 32 : value;
 
-    this.multiServiceAccessory.sendCommand(capability, command, [convertedTemp]);
+    this.baseAccessory.sendCommand(this.componentId, capability, command, [convertedTemp]);
   }
 
   // DISPLAY UNITS

@@ -1,7 +1,7 @@
 import { PlatformAccessory, CharacteristicValue } from 'homebridge';
 import { IKHomeBridgeHomebridgePlatform } from '../platform';
 import { BaseService } from './baseService';
-import { MultiServiceAccessory } from '../multiServiceAccessory';
+import { BaseAccessory } from '../accessory/baseAccessory';
 import { ShortEvent } from '../webhook/subscriptionHandler';
 
 export class LightService extends BaseService {
@@ -16,12 +16,16 @@ export class LightService extends BaseService {
 
   requireSetColor = false;
 
-  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[],
-    multiServiceAccessory: MultiServiceAccessory,
-    name: string, deviceStatus) {
-    super(platform, accessory, capabilities, multiServiceAccessory, name, deviceStatus);
+  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[], componentId: string,
+    baseAccessory: BaseAccessory, name: string, deviceStatus) {
+    super(platform, accessory, capabilities, componentId, baseAccessory, name, deviceStatus);
 
     this.setServiceType(platform.Service.Lightbulb);
+
+    let pollSwitchesAndLightsSeconds = 10; // default to 10 seconds
+    if (this.platform.config.PollSwitchesAndLightsSeconds !== undefined) {
+      pollSwitchesAndLightsSeconds = this.platform.config.PollSwitchesAndLightsSeconds;
+    }
 
     // Set the event handlers
     this.log.debug(`Adding LightService to ${this.name}`);
@@ -29,26 +33,47 @@ export class LightService extends BaseService {
       .onGet(this.getSwitchState.bind(this))
       .onSet(this.setSwitchState.bind(this));
 
+    this.getSwitchState();
+
+    if (pollSwitchesAndLightsSeconds > 0) {
+      baseAccessory.startPollingState(pollSwitchesAndLightsSeconds, this.getSwitchState.bind(this), this.service,
+        platform.Characteristic.On);
+    }
+
     // if (accessory.context.device.components[0].capabilities.find(c => c.id === 'switchLevel')) {
-    if (this.findCapability('switchLevel')) {
+    if (this.findComponentCapability('switchLevel')) {
       this.log.debug(`${this.name} supports switchLevel`);
       this.service.getCharacteristic(platform.Characteristic.Brightness)
         .onSet(this.setLevel.bind(this))
         .onGet(this.getLevel.bind(this));
+
+      this.getLevel();
+
+      if (pollSwitchesAndLightsSeconds > 0) {
+        baseAccessory.startPollingState(pollSwitchesAndLightsSeconds, this.getLevel.bind(this), this.service,
+          platform.Characteristic.Brightness);
+      }
     }
 
     // If this bulb supports colorTemperature, then add those handlers
     // if (accessory.context.device.components[0].capabilities.find(c => c.id === 'colorTemperature')) {
-    if (this.findCapability('colorTemperature')) {
+    if (this.findComponentCapability('colorTemperature')) {
       this.log.debug(`${this.name} supports colorTemperature`);
       this.service.getCharacteristic(platform.Characteristic.ColorTemperature)
         .onSet(this.setColorTemp.bind(this))
         .onGet(this.getColorTemp.bind(this));
+
+      this.getColorTemp();
+
+      if (pollSwitchesAndLightsSeconds > 0) {
+        baseAccessory.startPollingState(pollSwitchesAndLightsSeconds, this.getColorTemp.bind(this), this.service,
+          platform.Characteristic.ColorTemperature);
+      }
     }
 
     // If we support color control...
     //if (accessory.context.device.components[0].capabilities.find(c => c.id === 'colorControl')) {
-    if (this.findCapability('colorControl')) {
+    if (this.findComponentCapability('colorControl')) {
       this.log.debug(`${this.name} supports colorControl`);
       this.service.getCharacteristic(platform.Characteristic.Hue)
         .onSet(this.setHue.bind(this))
@@ -60,16 +85,13 @@ export class LightService extends BaseService {
       // Get current color setting.  Sets currentColor values to start
       this.getHue();
       this.getSaturation();
-    }
 
-    let pollSwitchesAndLightsSeconds = 10; // default to 10 seconds
-    if (this.platform.config.PollSwitchesAndLightsSeconds !== undefined) {
-      pollSwitchesAndLightsSeconds = this.platform.config.PollSwitchesAndLightsSeconds;
-    }
-
-    if (pollSwitchesAndLightsSeconds > 0) {
-      multiServiceAccessory.startPollingState(pollSwitchesAndLightsSeconds, this.getSwitchState.bind(this), this.service,
-        platform.Characteristic.On);
+      if (pollSwitchesAndLightsSeconds > 0) {
+        baseAccessory.startPollingState(pollSwitchesAndLightsSeconds, this.getHue.bind(this), this.service,
+          platform.Characteristic.Hue);
+        baseAccessory.startPollingState(pollSwitchesAndLightsSeconds, this.getSaturation.bind(this), this.service,
+          platform.Characteristic.Saturation);
+      }
     }
   }
 
@@ -77,11 +99,11 @@ export class LightService extends BaseService {
   async setSwitchState(value: CharacteristicValue) {
     this.log.debug('Received setSwitchState(' + value + ') event for ' + this.name);
 
-    if (!this.multiServiceAccessory.isOnline) {
+    if (!this.baseAccessory.isOnline) {
       this.log.error(this.name + ' is offline');
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
-    this.multiServiceAccessory.sendCommand('switch', value ? 'on' : 'off').then((success) => {
+    this.baseAccessory.sendCommand(this.componentId, 'switch', value ? 'on' : 'off').then((success) => {
       if (success) {
         this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
         this.deviceStatus.timestamp = 0;
@@ -100,7 +122,7 @@ export class LightService extends BaseService {
     return new Promise((resolve, reject) => {
       this.getStatus().then(success => {
         if (success) {
-          const switchState = this.deviceStatus.status.switch.switch.value;
+          const switchState = this.deviceStatus.status[this.componentId].switch.switch.value;
           this.log.debug(`SwitchState value from ${this.name}: ${switchState}`);
           resolve(switchState === 'on');
         } else {
@@ -114,12 +136,12 @@ export class LightService extends BaseService {
     this.log.debug('Received setLevel(' + value + ') event for ' + this.name);
 
     return new Promise<void>((resolve, reject) => {
-      if (!this.multiServiceAccessory.isOnline()) {
+      if (!this.baseAccessory.isOnline()) {
         this.log.error(this.accessory.context.device.label + ' is offline');
         return reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       }
 
-      this.multiServiceAccessory.sendCommand('switchLevel', 'setLevel', [value]).then(success => {
+      this.baseAccessory.sendCommand(this.componentId, 'switchLevel', 'setLevel', [value]).then(success => {
         if (success) {
           this.log.debug('setLevel(' + value + ') SUCCESSFUL for ' + this.name);
           this.deviceStatus.timestamp = 0;
@@ -137,7 +159,7 @@ export class LightService extends BaseService {
     let level = 0;
 
     return new Promise<CharacteristicValue>((resolve, reject) => {
-      if (!this.multiServiceAccessory.isOnline()) {
+      if (!this.baseAccessory.isOnline()) {
         this.log.error(this.accessory.context.device.label + 'is offline');
         return reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       }
@@ -147,8 +169,8 @@ export class LightService extends BaseService {
           return reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         }
 
-        if (this.deviceStatus.status.switchLevel.level.value !== undefined) {
-          level = this.deviceStatus.status.switchLevel.level.value;
+        if (this.deviceStatus.status[this.componentId].switchLevel.level.value !== undefined) {
+          level = this.deviceStatus.status[this.componentId].switchLevel.level.value;
           this.log.debug('getLevel() SUCCESSFUL for ' + this.name + '. value = ' + level);
           resolve(level);
         } else {
@@ -163,13 +185,13 @@ export class LightService extends BaseService {
     this.log.debug(`Set Color Temperature received with value ${value}`);
 
     return new Promise((resolve, reject) => {
-      if (!this.multiServiceAccessory.isOnline()) {
+      if (!this.baseAccessory.isOnline()) {
         this.log.error(this.accessory.context.device.label + ' is offline');
         return reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       }
       const stValue = 6500 - Math.round((value as number - 140) / 360 * 6500) + 1;
       this.log.debug(`Sending converted temperature value of ${stValue} to ${this.name}`);
-      this.multiServiceAccessory.sendCommand('colorTemperature', 'setColorTemperature', [stValue])
+      this.baseAccessory.sendCommand(this.componentId, 'colorTemperature', 'setColorTemperature', [stValue])
         .then(() => resolve())
         .catch((value) => reject(value));
     });
@@ -186,8 +208,8 @@ export class LightService extends BaseService {
 
         let stTemperature;
 
-        if (this.deviceStatus.status.colorTemperature.colorTemperature.value !== undefined) {
-          stTemperature = Math.min(this.deviceStatus.status.colorTemperature.colorTemperature.value, 6500);
+        if (this.deviceStatus.status[this.componentId].colorTemperature.colorTemperature.value !== undefined) {
+          stTemperature = Math.min(this.deviceStatus.status[this.componentId].colorTemperature.colorTemperature.value, 6500);
           this.log.debug('getColorTemperature() SUCCESSFUL for ' + this.name + '. value = ' + stTemperature);
           // Convert number to the homebridge compatible value
           const hbTemperature = 500 - ((stTemperature / 6500) * 360);
@@ -208,7 +230,7 @@ export class LightService extends BaseService {
   async setColor(hue: number, saturation: number): Promise<boolean> {
     this.log.debug(`setColor called with hue: ${hue}, saturation: ${saturation}}`);
     return new Promise((resolve) => {
-      this.multiServiceAccessory.sendCommand('colorControl', 'setColor', [{
+      this.baseAccessory.sendCommand(this.componentId, 'colorControl', 'setColor', [{
         hue: this.currentColor.hue,
         saturation: this.currentColor.saturation,
       }])
@@ -229,7 +251,7 @@ export class LightService extends BaseService {
           .catch((value) => reject(value));
 
       } else {
-        this.multiServiceAccessory.sendCommand('colorControl', 'setHue', [huePct])
+        this.baseAccessory.sendCommand(this.componentId, 'colorControl', 'setHue', [huePct])
           .then((success) => {
             if (success) {
               resolve();
@@ -259,8 +281,8 @@ export class LightService extends BaseService {
           return reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         }
 
-        if (this.deviceStatus.status.colorControl.hue.value !== undefined) {
-          const hue = this.deviceStatus.status.colorControl.hue.value;
+        if (this.deviceStatus.status[this.componentId].colorControl.hue.value !== undefined) {
+          const hue = this.deviceStatus.status[this.componentId].colorControl.hue.value;
           this.log.debug('getHue() SUCCESSFUL for ' + this.name + '. value = ' + hue);
           this.currentColor.hue = hue;
           const hueArc = Math.round((hue / 100) * 360);
@@ -287,7 +309,7 @@ export class LightService extends BaseService {
           .catch((value) => reject(value));
       } else {
 
-        this.multiServiceAccessory.sendCommand('colorControl', 'setSaturation', [value])
+        this.baseAccessory.sendCommand(this.componentId, 'colorControl', 'setSaturation', [value])
           .then((success) => {
             if (success) {
               resolve();
@@ -315,8 +337,8 @@ export class LightService extends BaseService {
           return reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         }
 
-        if (this.deviceStatus.status.colorControl.saturation.value !== undefined) {
-          const satPct = this.deviceStatus.status.colorControl.saturation.value;
+        if (this.deviceStatus.status[this.componentId].colorControl.saturation.value !== undefined) {
+          const satPct = this.deviceStatus.status[this.componentId].colorControl.saturation.value;
           this.currentColor.saturation = satPct;
           this.log.debug('getSaturation() SUCCESSFUL for ' + this.name + '. value = ' + satPct);
           // Convert saturation from percent to degrees
@@ -350,7 +372,7 @@ export class LightService extends BaseService {
 
       case 'colorTemperature': {
         this.log.debug(`Event updating colorTemperature capability for ${this.name} to ${event.value}`);
-        const stTemperature = Math.min(this.deviceStatus.status.colorTemperature.colorTemperature.value, 6500);
+        const stTemperature = Math.min(this.deviceStatus.status[this.componentId].colorTemperature.colorTemperature.value, 6500);
         this.log.debug('getColorTemperature() SUCCESSFUL for ' + this.name + '. value = ' + stTemperature);
         // Convert number to the homebridge compatible value
         const hbTemperature = 500 - ((stTemperature / 6500) * 360);

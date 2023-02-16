@@ -1,14 +1,13 @@
 import { PlatformAccessory, CharacteristicValue } from 'homebridge';
 import { IKHomeBridgeHomebridgePlatform } from '../platform';
 import { BaseService } from './baseService';
-import { MultiServiceAccessory } from '../multiServiceAccessory';
+import { BaseAccessory } from '../accessory/baseAccessory';
 
 export class BatteryService extends BaseService {
 
-  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[],
-    multiServiceAccessory: MultiServiceAccessory,
-    name: string, deviceStatus) {
-    super(platform, accessory, capabilities, multiServiceAccessory, name, deviceStatus);
+  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[], componentId: string,
+    baseAccessory: BaseAccessory, name: string, deviceStatus) {
+    super(platform, accessory, capabilities, componentId, baseAccessory, name, deviceStatus);
     this.setServiceType(platform.Service.Battery);
 
     this.log.debug(`Adding BatteryService to ${this.name}`);
@@ -24,7 +23,7 @@ export class BatteryService extends BaseService {
     }
 
     if (pollSensorSeconds > 0) {
-      multiServiceAccessory.startPollingState(pollSensorSeconds, this.getBatteryLevel.bind(this), this.service,
+      baseAccessory.startPollingState(pollSensorSeconds, this.getBatteryLevel.bind(this), this.service,
         platform.Characteristic.BatteryLevel);
     }
   }
@@ -37,7 +36,7 @@ export class BatteryService extends BaseService {
     return new Promise((resolve, reject) => {
       this.getStatus().then(success => {
         if (success) {
-          const batteryLevel = this.deviceStatus.status.battery.battery.value;
+          const batteryLevel = this.deviceStatus.status[this.componentId].battery.battery.value;
           if (batteryLevel === null) {
             return reject (new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
           }
@@ -58,7 +57,7 @@ export class BatteryService extends BaseService {
     return new Promise((resolve, reject) => {
       this.getStatus().then(success => {
         if (success) {
-          const batteryLevel = this.deviceStatus.status.battery.battery.value;
+          const batteryLevel = this.deviceStatus.status[this.componentId].battery.battery.value;
           if (batteryLevel === null) {
             return reject (new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
           }

@@ -2,8 +2,9 @@ import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, 
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import axios = require('axios');
-import { BasePlatformAccessory } from './basePlatformAccessory';
-import { MultiServiceAccessory } from './multiServiceAccessory';
+import { BaseAccessory } from './accessory/baseAccessory';
+import { GenericAccessory } from './accessory/genericAccessory';
+import { InovelliFanLightAccessory } from './accessory/inovelliFanLightAccessory';
 import { SubscriptionHandler } from './webhook/subscriptionHandler';
 
 /**
@@ -18,6 +19,10 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
   // this is used to track restored cached accessories
   public readonly accessories: PlatformAccessory[] = [];
 
+  private static deviceManufacturerCode = {
+    '031E-000E-0001': InovelliFanLightAccessory,
+  };
+
   private locationIDsToIgnore: string[] = [];
   private roomsIDsToIgnore: string[] = [];
 
@@ -30,7 +35,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
     headers: this.headerDict,
   });
 
-  private accessoryObjects: BasePlatformAccessory[] = [];
+  private accessoryObjects: BaseAccessory[] = [];
   private subscriptionHandler: SubscriptionHandler|undefined = undefined;
 
   constructor(
@@ -174,10 +179,20 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
     // this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, this.accessories);
 
     devices.forEach((device) => {
-
       this.log.debug('DEVICE DATA: ' + JSON.stringify(device));
 
-      if (this.findSupportedCapability(device)) {
+      let accessoryType: typeof BaseAccessory | undefined = undefined;
+
+      const knownDevice = Object.keys(IKHomeBridgeHomebridgePlatform.deviceManufacturerCode).find(code =>
+        code === device.deviceManufacturerCode);
+      if (knownDevice) {
+        accessoryType = IKHomeBridgeHomebridgePlatform.deviceManufacturerCode[knownDevice];
+
+      } else if (this.findSupportedCapability(device)) {
+        accessoryType = GenericAccessory;
+      }
+
+      if (accessoryType) {
         const existingAccessory = this.accessories.find(accessory => accessory.UUID === device.deviceId);
 
         if (existingAccessory) {
@@ -190,7 +205,8 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
 
           // create the accessory handler for the restored accessory
           // this is imported from `platformAccessory.ts`
-          this.accessoryObjects.push(this.createAccessoryObject(device, existingAccessory));
+          this.accessoryObjects.push(new (accessoryType as any)(this, existingAccessory));
+
 
           // it is possible to remove platform accessories at any time using `api.unregisterPlatformAccessories`, eg.:
           // remove platform accessories when no longer present
@@ -209,8 +225,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
 
           // create the accessory handler for the newly create accessory
           // this is imported from `platformAccessory.ts`
-
-          this.accessoryObjects.push(this.createAccessoryObject(device, accessory));
+          this.accessoryObjects.push(new (accessoryType as any)(this, accessory));
 
           // link the accessory to your platform
           this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
@@ -224,23 +239,10 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
     const component = device.components.find(c => c.id === 'main');
 
     if (component) {
-      return (component.capabilities.find((ca) => MultiServiceAccessory.capabilitySupported(ca.id)));
+      return (component.capabilities.find((ca) => GenericAccessory.capabilitySupported(ca.id)));
     } else {
-      return (device.components[0].capabilities.find((ca) => MultiServiceAccessory.capabilitySupported(ca.id)));
+      return (device.components[0].capabilities.find((ca) => GenericAccessory.capabilitySupported(ca.id)));
     }
-  }
-
-  createAccessoryObject(device, accessory): BasePlatformAccessory {
-    const component = device.components.find(c => c.id === 'main');
-
-    let capabilities;
-    if (component) {
-      capabilities = component.capabilities;
-    } else {
-      capabilities = device.components[0].capabilities;
-    }
-
-    return new MultiServiceAccessory(this, accessory, capabilities);
   }
 }
 
