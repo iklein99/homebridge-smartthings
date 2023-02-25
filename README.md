@@ -13,6 +13,8 @@ This is yet another smartthings plugin for Homebridge.  This requires no access 
 require a lot of work to install.  It will discover devices automatically as well as unregister devices that are removed
 from your smarttthings network.  This is currently under development.
 
+## New in version 1.5.1
+SmartThings Webhook support is now supported and open to all.  See the announcement [here](https://github.com/iklein99/homebridge-smartthings/discussions/141).
 ## New in 1.5.0
 Support for SmartThings webhook to support real-time update of device state changes.  Support for webhooks is in closed beta at 
 the moment, but will be made available soon.  
