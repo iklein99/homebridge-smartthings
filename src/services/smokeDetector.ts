@@ -6,11 +6,11 @@ import { ShortEvent } from '../webhook/subscriptionHandler';
 
 export class SmokeDetectorService extends SensorService {
 
-  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[],
+  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, componentId: string, capabilities: string[],
     multiServiceAccessory: MultiServiceAccessory,
     name: string, deviceStatus) {
 
-    super(platform, accessory, capabilities, multiServiceAccessory, name, deviceStatus);
+    super(platform, accessory, componentId, capabilities, multiServiceAccessory, name, deviceStatus);
 
     this.initService(platform.Service.SmokeSensor,
       platform.Characteristic.SmokeDetected,

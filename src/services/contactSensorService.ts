@@ -6,10 +6,10 @@ import { ShortEvent } from '../webhook/subscriptionHandler';
 
 export class ContactSensorService extends SensorService {
 
-  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[],
+  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, componentId: string, capabilities: string[],
     multiServiceAccessory: MultiServiceAccessory,
     name: string, deviceStatus) {
-    super(platform, accessory, capabilities, multiServiceAccessory, name, deviceStatus);
+    super(platform, accessory, componentId, capabilities, multiServiceAccessory, name, deviceStatus);
 
     this.log.debug(`Adding ContactService to ${this.name}`);
     this.initService(platform.Service.ContactSensor, platform.Characteristic.ContactSensorState, (status) => {

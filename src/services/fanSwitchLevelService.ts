@@ -6,10 +6,10 @@ import { ShortEvent } from '../webhook/subscriptionHandler';
 
 export class FanSwitchLevelService extends BaseService {
 
-  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilitites: string[],
+  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, componentId: string, capabilitites: string[],
     multiServiceAccessory: MultiServiceAccessory,
     name: string, deviceStatus) {
-    super(platform, accessory, capabilitites, multiServiceAccessory, name, deviceStatus);
+    super(platform, accessory, componentId, capabilitites, multiServiceAccessory, name, deviceStatus);
     this.setServiceType(platform.Service.Fan);
 
     // Set the event handlers

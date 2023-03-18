@@ -13,6 +13,20 @@ This is yet another smartthings plugin for Homebridge.  This requires no access 
 require a lot of work to install.  It will discover devices automatically as well as unregister devices that are removed
 from your smarttthings network.  This is currently under development.
 
+## New in version 1.5.2
+* Support for multi-component devices
+* Support for buttons - requires subscription to the webhook service.  See the announcement [here](https://github.com/iklein99/homebridge-smartthings/discussions/141).
+<p>
+IMPORTANT: Multi-button devices get loaded into the home app with the button numbers not always in the order that they
+are on the device.  Also, some devices, like the Aeotec Fob Remote will show 1 more button than there are on the device.
+This is because the device reports a main component with a button along with one component for each button.  You will find
+that in this case, one of the buttons in the Home app acts as a master, so it will fire for any of the other buttons. 
+</p>
+<p>
+In order to see which buttons are which, you can observe the animation in the Home app as you press buttons so you know how to set up
+actions per button.
+</p>
+
 ## Fixed in version 1.5.2
 * Ignore device names with a single quote will not match with the device name coming in from SmartThings due to character code
 conversion.  This has been fixed.

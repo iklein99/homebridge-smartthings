@@ -33,7 +33,11 @@ import { StatelessProgrammableSwitchService } from './services/statelessProgramm
  */
 export class MultiServiceAccessory extends BasePlatformAccessory {
   //  service: Service;
-  capabilities;
+  //capabilities;
+  components: {
+    componentId: string;
+    capabilities: string[];
+  }[] = [];
 
   /**
    * These are just used to create a working example
@@ -104,10 +108,10 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
   constructor(
     platform: IKHomeBridgeHomebridgePlatform,
     accessory: PlatformAccessory,
-    capabilities,
+    // capabilities,
   ) {
     super(platform, accessory);
-    this.capabilities = capabilities;
+    // this.capabilities = capabilities;
 
     // Add services per capabilities
 
@@ -115,19 +119,52 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
     // determine what kind of device.  Fans, lights,
     // switches all have a switch capability and we need to add the correct one.
 
+    // Object.keys(MultiServiceAccessory.capabilityMap).forEach((capability) => {
+    //   if (capabilities.find((c) => c.id === capability)) {
+    //     this.services.push(new (
+    //     MultiServiceAccessory.capabilityMap[capability])(this.platform, this.accessory, [capability], this, this.name, this.deviceStatus,
+    //     ));
+    //   }
+    // });
+    // if (capabilities.find(c => (c.id === 'switch') || c.id === 'thermostatMode')) {
+    //   let service = this.findComboService(capabilities);
+    //   if (service === undefined) {
+    //     service = SwitchService;
+    //   }
+    //   this.services.push(new service(this.platform, this.accessory, capabilities.map(c => c.id), this, this.name, this.deviceStatus));
+    // }
+  }
+
+  public addComponent(componentId: string, capabilities: string[]) {
+    this.components.push({
+      componentId,
+      capabilities,
+    });
+
+    // If this device has a 'switch' or 'thermostatMode' capability, need to look at the combinations to
+    // determine what kind of device.  Fans, lights,
+    // switches all have a switch capability and we need to add the correct one.
+
     Object.keys(MultiServiceAccessory.capabilityMap).forEach((capability) => {
-      if (capabilities.find((c) => c.id === capability)) {
+      if (capabilities.find((c) => c === capability)) {
         this.services.push(new (
-          MultiServiceAccessory.capabilityMap[capability])(this.platform, this.accessory, [capability], this, this.name, this.deviceStatus,
-        ));
+          MultiServiceAccessory.capabilityMap[capability])(
+            this.platform,
+            this.accessory,
+            componentId,
+            [capability],
+            this,
+            this.name,
+            this.deviceStatus,
+          ));
       }
     });
-    if (capabilities.find(c => (c.id === 'switch') || c.id === 'thermostatMode')) {
+    if (capabilities.find(c => (c === 'switch') || c === 'thermostatMode')) {
       let service = this.findComboService(capabilities);
       if (service === undefined) {
         service = SwitchService;
       }
-      this.services.push(new service(this.platform, this.accessory, capabilities.map(c => c.id), this, this.name, this.deviceStatus));
+      this.services.push(new service(this.platform, this.accessory, componentId, capabilities, this, this.name, this.deviceStatus));
     }
   }
 
@@ -143,7 +180,7 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
       if (service === undefined) {
         let found = true;
         entry.capabilities.forEach(c => {
-          if (!deviceCapabilities.find(dc => dc.id === c)) {
+          if (!deviceCapabilities.find((dc) => dc === c)) {
             found = false;
           }
         });
@@ -181,9 +218,10 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
   public processEvent(event: ShortEvent): void {
     this.log.debug(`Received events for ${this.name}`);
 
-    const service = this.services.find(s => s.capabilities.find(c => c === event.capability));
+    const service = this.services.find(s => s.componentId === event.componentId && s.capabilities.find(c => c === event.capability));
 
     if (service) {
+      this.log.debug(`Event for ${this.name}:${event.componentId} - ${event.value}`);
       service.processEvent(event);
     }
 

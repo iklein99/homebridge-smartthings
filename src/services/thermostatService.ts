@@ -10,16 +10,18 @@ export class ThermostatService extends BaseService {
   units = 'C';
   supportsOperatingState = false;
 
-  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, capabilities: string[],
+  constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, componentId: string, capabilities: string[],
     multiServiceAccessory: MultiServiceAccessory,
     name: string, deviceStatus) {
-    super(platform, accessory, capabilities, multiServiceAccessory, name, deviceStatus);
+    super(platform, accessory, componentId, capabilities, multiServiceAccessory, name, deviceStatus);
 
     this.setServiceType(platform.Service.Thermostat);
     // Set the event handlers
     this.log.debug(`Adding ThermostatService to ${this.name}`);
 
-    if (this.multiServiceAccessory.capabilities.find((c) => c.id === 'thermostatOperatingState')) {
+    const component = this.multiServiceAccessory.components.find((c) => c.componentId === componentId);
+    if (component && component.capabilities.find((cap) => cap === 'thermostatOperatingState')) {
+    //if (this.multiServiceAccessory.capabilities.find((c) => c.id === 'thermostatOperatingState')) {
       this.supportsOperatingState = true;
     }
     this.service.getCharacteristic(platform.Characteristic.CurrentHeatingCoolingState)
