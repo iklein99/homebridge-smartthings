@@ -23,6 +23,7 @@ import { ShortEvent } from './webhook/subscriptionHandler';
 import { FanSpeedService } from './services/fanSpeedService';
 import { WindowCoveriingService } from './services/windowCoveringService';
 import { ThermostatService } from './services/thermostatService';
+import { StatelessProgrammableSwitchService } from './services/statelessProgrammableSwitchService';
 
 
 /**
@@ -56,6 +57,7 @@ export class MultiServiceAccessory extends BasePlatformAccessory {
     'relativeHumidityMeasurement': HumidityService,
     'illuminanceMeasurement': LightSensorService,
     'contactSensor': ContactSensorService,
+    'button': StatelessProgrammableSwitchService,
     'battery': BatteryService,
     'valve': ValveService,
   };
