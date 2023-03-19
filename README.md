@@ -13,6 +13,9 @@ This is yet another smartthings plugin for Homebridge.  This requires no access 
 require a lot of work to install.  It will discover devices automatically as well as unregister devices that are removed
 from your smarttthings network.  This is currently under development.
 
+## Fixed in version 1.5.3
+* Fixed double push issue on buttons
+
 ## New in version 1.5.2
 * Support for multi-component devices
 * Support for buttons - requires subscription to the webhook service.  See the announcement [here](https://github.com/iklein99/homebridge-smartthings/discussions/141).
