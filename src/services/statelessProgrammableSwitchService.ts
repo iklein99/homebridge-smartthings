@@ -94,7 +94,9 @@ export class StatelessProgrammableSwitchService extends BaseService {
         return(this.platform.Characteristic.ProgrammableSwitchEvent.LONG_PRESS);
       default:
         if (inboundValue.startsWith('pushed') || inboundValue.startsWith('down')) {
-          return(undefined);
+          return(this.platform.Characteristic.ProgrammableSwitchEvent.DOUBLE_PRESS);
+        } else {
+          return undefined;
         }
     }
   }

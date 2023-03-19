@@ -43,11 +43,13 @@ export class SubscriptionHandler {
 
     const headerDict = {
       'Authorization': 'Bearer: ' + this.config.WebhookToken,
+      'Keep-Alive': 'timeout=120, max=1000',
     };
 
     this.axInstance = axios.default.create({
       baseURL: WEBHOOK_URL,
       headers: headerDict,
+      timeout: 90000,
     });
 
   }
@@ -56,7 +58,7 @@ export class SubscriptionHandler {
     this.log.debug('Starting subscription handler');
 
     const request: RequestBody = {
-      timeout: 40000,
+      timeout: 85000,
       deviceIds: this.deviceIds,
     };
 
