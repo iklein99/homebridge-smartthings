@@ -84,7 +84,8 @@ export class LightService extends BaseService {
     this.multiServiceAccessory.sendCommand('switch', value ? 'on' : 'off').then((success) => {
       if (success) {
         this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
-        this.deviceStatus.timestamp = 0;
+        this.multiServiceAccessory.forceNextStatusRefresh();
+        // this.deviceStatus.timestamp = 0;
       } else {
         this.log.error(`Command failed for ${this.name}`);
       }
@@ -122,7 +123,8 @@ export class LightService extends BaseService {
       this.multiServiceAccessory.sendCommand('switchLevel', 'setLevel', [value]).then(success => {
         if (success) {
           this.log.debug('setLevel(' + value + ') SUCCESSFUL for ' + this.name);
-          this.deviceStatus.timestamp = 0;
+          this.multiServiceAccessory.forceNextStatusRefresh();
+          // this.deviceStatus.timestamp = 0;
           resolve();
         } else {
           this.log.error(`Failed to send setLevel command for ${this.name}`);

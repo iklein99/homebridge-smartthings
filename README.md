@@ -30,6 +30,8 @@ In order to see which buttons are which, you can observe the animation in the Ho
 actions per button.
 </p>
 
+## Fixed in version 1.5.3
+* Fixed status issue with multi-component devices.  This only affects non-webhook configurations.
 ## Fixed in version 1.5.2
 * Ignore device names with a single quote will not match with the device name coming in from SmartThings due to character code
 conversion.  This has been fixed.

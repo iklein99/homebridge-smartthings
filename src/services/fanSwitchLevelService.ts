@@ -83,7 +83,8 @@ export class FanSwitchLevelService extends BaseService {
       this.multiServiceAccessory.sendCommand('switchLevel', 'setLevel', [value]).then(success => {
         if (success) {
           this.log.debug('setLevel(' + value + ') SUCCESSFUL for ' + this.name);
-          this.deviceStatus.timestamp = 0;
+          this.multiServiceAccessory.forceNextStatusRefresh();
+          // this.deviceStatus.timestamp = 0;
           resolve();
         } else {
           this.log.error(`Failed to send setLevel command for ${this.name}`);

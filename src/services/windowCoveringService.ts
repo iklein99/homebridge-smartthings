@@ -60,6 +60,7 @@ export class WindowCoveriingService extends BaseService {
     this.multiServiceAccessory.sendCommand('windowShadeLevel', 'setShadeLevel', [value])
       .then(() => {
         this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
+        this.multiServiceAccessory.forceNextStatusRefresh();
         // this.pollTry = 0;
         // this.log.debug('Polling shade status...');
 

@@ -85,7 +85,8 @@ export class LockService extends BaseService {
     this.multiServiceAccessory.sendCommand('lock', value ? 'lock' : 'unlock').then((success) => {
       if (success) {
         this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
-        this.deviceStatus.timestamp = 0; // Force refresh
+        this.multiServiceAccessory.forceNextStatusRefresh();
+        // this.deviceStatus.timestamp = 0; // Force refresh
       } else {
         this.log.error(`Command failed for ${this.name}`);
       }

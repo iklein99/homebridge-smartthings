@@ -40,7 +40,8 @@ export class SwitchService extends BaseService {
     this.multiServiceAccessory.sendCommand('switch', value ? 'on' : 'off').then((success) => {
       if (success) {
         this.log.debug('onSet(' + value + ') SUCCESSFUL for ' + this.name);
-        this.deviceStatus.timestamp = 0;  // Force a refresh next query.
+        this.multiServiceAccessory.forceNextStatusRefresh();
+        // this.deviceStatus.timestamp = 0;  // Force a refresh next query.
       } else {
         this.log.error(`Command failed for ${this.name}`);
       }

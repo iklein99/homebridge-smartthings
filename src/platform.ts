@@ -2,7 +2,7 @@ import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, 
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import axios = require('axios');
-import { BasePlatformAccessory } from './basePlatformAccessory';
+//import { BasePlatformAccessory } from './basePlatformAccessory';
 import { MultiServiceAccessory } from './multiServiceAccessory';
 import { SubscriptionHandler } from './webhook/subscriptionHandler';
 
@@ -30,7 +30,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
     headers: this.headerDict,
   });
 
-  private accessoryObjects: BasePlatformAccessory[] = [];
+  private accessoryObjects: MultiServiceAccessory[] = [];
   private subscriptionHandler: SubscriptionHandler|undefined = undefined;
 
   constructor(
@@ -234,7 +234,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
     }
   }
 
-  createAccessoryObject(device, accessory): BasePlatformAccessory {
+  createAccessoryObject(device, accessory): MultiServiceAccessory {
     // const component = device.components.find(c => c.id === 'main');
 
     // let capabilities;
