@@ -29,7 +29,9 @@ that in this case, one of the buttons in the Home app acts as a master, so it wi
 In order to see which buttons are which, you can observe the animation in the Home app as you press buttons so you know how to set up
 actions per button.
 </p>
-
+## Fixed in version 1.5.5
+* If a sensor doesn't return a valid status value, the attached service would be removed.  Now will ignore failure until it happens 5
+times in a row.
 ## Fixed in version 1.5.4
 * Fixed status issue with multi-component devices.  This only affects non-webhook configurations.
 ## Fixed in version 1.5.2

@@ -4,13 +4,14 @@ import { BaseService } from './baseService';
 import { MultiServiceAccessory } from '../multiServiceAccessory';
 
 export abstract class SensorService extends BaseService {
-  statusTranslation: (status) => CharacteristicValue | null = ()=> {
+  statusFailureCount = 0;
+  statusTranslation: (status) => CharacteristicValue | null = () => {
     return null;
   };
 
   pollingTimer: NodeJS.Timer | void | undefined;
 
-  characteristic: WithUUID<new () => Characteristic>|undefined;
+  characteristic: WithUUID<new () => Characteristic> | undefined;
 
   constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, componentId: string, capabilities: string[],
     multiServiceAccessory: MultiServiceAccessory,
@@ -52,16 +53,22 @@ export abstract class SensorService extends BaseService {
           let value;
           try {
             value = this.statusTranslation(this.deviceStatus.status);
+            this.statusFailureCount = 0;
             this.log.debug(`State for ${this.name}: ${value}`);
             resolve(value);
             return;
-          } catch(error) {
-            this.log.error(`Bad status from ${this.name}.  Removing this service.`);
-            // Stop polling and remove service
-            if (this.pollingTimer) {
-              clearInterval(this.pollingTimer);
+          } catch (error) {
+            this.statusFailureCount++;
+            if (this.statusFailureCount > 5) {
+              this.log.error(`Bad status from ${this.name}.  Removing this service.`);
+              // Stop polling and remove service
+              if (this.pollingTimer) {
+                clearInterval(this.pollingTimer);
+              }
+              this.accessory.removeService(this.service);
+            } else {
+              this.log.warn(`Bad status from ${this.name}.  Ignoring for now.`);
             }
-            this.accessory.removeService(this.service);
             reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.INVALID_VALUE_IN_REQUEST));
             return;
           }
