@@ -116,6 +116,9 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
         res.data.items.forEach((device) => {
           // If an apostrophe is included in the name of the device in SmartThings, it comes over as a Right Single
           // quote which will not match with a single quote in the config.  This replaces it so it will match
+          if (!device.label) {
+            device.label = 'Missing Name';
+          }
           const deviceName = device.label.replaceAll(String.fromCharCode(8217), '\'');
           if (this.config.IgnoreDevices &&
             this.config.IgnoreDevices.find(d => d.replaceAll(String.fromCharCode(8217), '\'').toLowerCase() === deviceName.toLowerCase())) {
