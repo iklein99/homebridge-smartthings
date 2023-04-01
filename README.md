@@ -12,6 +12,9 @@
 This is yet another smartthings plugin for Homebridge.  This requires no access to the legacy smartthings app, and doesn't
 require a lot of work to install.  It will discover devices automatically as well as unregister devices that are removed
 from your smarttthings network.  This is currently under development.
+## Fixed in version 1.5.7
+* Issue in some cases where a device label is a number or some non-string type, there would be a failure when setting up the devices.
+This occured after release 1.5.2.
 ## Fixed in version 1.5.6
 * Handle missing device label (name)
 ## Fixed in version 1.5.5
@@ -35,11 +38,7 @@ that in this case, one of the buttons in the Home app acts as a master, so it wi
 In order to see which buttons are which, you can observe the animation in the Home app as you press buttons so you know how to set up
 actions per button.
 </p>
-## Fixed in version 1.5.5
-* If a sensor doesn't return a valid status value, the attached service would be removed.  Now will ignore failure until it happens 5
-times in a row.
-## Fixed in version 1.5.4
-* Fixed status issue with multi-component devices.  This only affects non-webhook configurations.
+
 ## Fixed in version 1.5.2
 * Ignore device names with a single quote will not match with the device name coming in from SmartThings due to character code
 conversion.  This has been fixed.

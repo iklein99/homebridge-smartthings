@@ -119,7 +119,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
           if (!device.label) {
             device.label = 'Missing Name';
           }
-          const deviceName = device.label.replaceAll(String.fromCharCode(8217), '\'');
+          const deviceName = device.label.toString().replaceAll(String.fromCharCode(8217), '\'');
           if (this.config.IgnoreDevices &&
             this.config.IgnoreDevices.find(d => d.replaceAll(String.fromCharCode(8217), '\'').toLowerCase() === deviceName.toLowerCase())) {
             this.log.info(`Ignoring ${device.label} because it is in the Ignore Devices list`);
