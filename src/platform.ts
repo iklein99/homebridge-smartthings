@@ -31,7 +31,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
   });
 
   private accessoryObjects: MultiServiceAccessory[] = [];
-  private subscriptionHandler: SubscriptionHandler|undefined = undefined;
+  private subscriptionHandler: SubscriptionHandler | undefined = undefined;
 
   constructor(
     public readonly log: Logger,
@@ -122,7 +122,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
           let deviceName = '';
           try {
             deviceName = device.label.toString().replaceAll(String.fromCharCode(8217), '\'');
-          } catch(error) {
+          } catch (error) {
             this.log.warn(`Error getting device name for ${device.label}: ${error}`);
             deviceName = device.label;
           }
@@ -253,7 +253,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
     //   capabilities = device.components[0].capabilities;
     // }
 
-    const acc =  new MultiServiceAccessory(this, accessory);
+    const acc = new MultiServiceAccessory(this, accessory);
     device.components.forEach(component => {
       acc.addComponent(component.id, component.capabilities.map((c) => c.id));
     });

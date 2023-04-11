@@ -24,7 +24,8 @@ import { FanSpeedService } from './services/fanSpeedService';
 import { WindowCoveriingService } from './services/windowCoveringService';
 import { ThermostatService } from './services/thermostatService';
 import { StatelessProgrammableSwitchService } from './services/statelessProgrammableSwitchService';
-
+import { AirConditionerService } from './services/airConditionerService';
+import { Command } from './services/smartThingsCommand';
 // type DeviceStatus = {
 //   timestamp: number;
 //   //status: Record<string, unknown>;
@@ -57,7 +58,7 @@ export class MultiServiceAccessory {
   private static capabilityMap = {
     'doorControl': DoorService,
     'lock': LockService,
-    // 'switch': SwitchService,
+    'switch': SwitchService,
     'windowShadeLevel': WindowCoveriingService,
     'motionSensor': MotionService,
     'waterSensor': LeakDetectorService,
@@ -75,6 +76,18 @@ export class MultiServiceAccessory {
 
   // Maps combinations of supported capabilities to a service
   private static comboCapabilityMap = [
+    {
+      capabilities: [
+        'switch',
+        'airConditionerMode',
+        'airConditionerFanMode',
+        'fanOscillationMode',
+        'thermostatCoolingSetpoint',
+        'temperatureMeasurement',
+        'relativeHumidityMeasurement'
+      ],
+      service: AirConditionerService,
+    },
     {
       capabilities: ['switch', 'fanSpeed', 'switchLevel'],
       service: FanSwitchLevelService,
@@ -98,10 +111,6 @@ export class MultiServiceAccessory {
     {
       capabilities: ['switch', 'valve'],
       service: ValveService,
-    },
-    {
-      capabilities: ['switch'],
-      service: SwitchService,
     },
     {
       capabilities: ['temperatureMeasurement',
@@ -181,6 +190,23 @@ export class MultiServiceAccessory {
       });
   }
 
+  private registerServiceIfMatchesCapabilities(componentId: string, component: any, capabilitiesToCover: string[], capabilities: string[], serviceConstructor: any): string[] {
+    this.log.debug(`Registering ${serviceConstructor.name} for capabilities ${capabilities}`);
+    // ignore services which cannot cover all required capabilities 
+    if (!capabilities.every(e => capabilitiesToCover.includes(e))) {
+      this.log.debug(`Ignoring ${serviceConstructor.name}`);
+      return capabilitiesToCover;
+    }
+
+    this.log.debug(`Creating instance of ${serviceConstructor.name} for capabilities ${capabilities}`);
+    const serviceInstance = new serviceConstructor(this.platform, this.accessory, componentId, capabilities, this, this.name, component);
+    this.services.push(serviceInstance);
+
+    this.log.debug(`Registered ${serviceConstructor.name} for capabilities ${capabilities}`);
+    // remove covered capabilities and return unused
+    return capabilitiesToCover.filter(e => !capabilities.includes(e));
+  }
+
   public addComponent(componentId: string, capabilities: string[]) {
     const component = {
       componentId,
@@ -189,55 +215,33 @@ export class MultiServiceAccessory {
     };
     this.components.push(component);
 
-    // If this device has a 'switch' or 'thermostatMode' capability, need to look at the combinations to
-    // determine what kind of device.  Fans, lights,
-    // switches all have a switch capability and we need to add the correct one.
+
+    let capabilitiesToCover = [...capabilities];
+
+    // Start with comboServices and remove used capabilities to avoid duplicated sensors.
+    // For example, there is no need to expose a temperature sensor in case of a thermostat which already exposes that charateristic.
+    MultiServiceAccessory.comboCapabilityMap
+      .sort(e => -e.capabilities.length) // services with larger capability set first
+      .forEach(entry => {
+        capabilitiesToCover = this.registerServiceIfMatchesCapabilities(
+          componentId,
+          component,
+          capabilitiesToCover,
+          entry.capabilities,
+          entry.service
+        );
+      });
 
     Object.keys(MultiServiceAccessory.capabilityMap).forEach((capability) => {
-      if (capabilities.find((c) => c === capability)) {
-        this.services.push(new (
-          MultiServiceAccessory.capabilityMap[capability])(
-            this.platform,
-            this.accessory,
-            componentId,
-            [capability],
-            this,
-            this.name,
-            component,
-          ));
-      }
+      const service = MultiServiceAccessory.capabilityMap[capability];
+      capabilitiesToCover = this.registerServiceIfMatchesCapabilities(
+        componentId,
+        component,
+        capabilitiesToCover,
+        [capability],
+        service
+      );
     });
-    if (capabilities.find(c => (c === 'switch') || c === 'thermostatMode')) {
-      let service = this.findComboService(capabilities);
-      if (service === undefined) {
-        service = SwitchService;
-      }
-      this.services.push(new service(this.platform, this.accessory, componentId, capabilities, this, this.name, component));
-    }
-  }
-
-  // If this is a capability that needs to be combined with others in order to determone the service,
-  // go through the combinations of cabailities in the map and return the first matching service.
-  // We look at combinations because devices like lights that dim also have switch capabilities
-  // as well as switchlevel capabilities.  Fans have switch and fanlevel capabilities.  This allows
-  // us to find a services that best matches the combination of capabilities reported by the device.
-  public findComboService(deviceCapabilities): typeof BaseService | undefined {
-    let service: typeof BaseService | undefined = undefined;
-
-    MultiServiceAccessory.comboCapabilityMap.forEach(entry => {
-      if (service === undefined) {
-        let found = true;
-        entry.capabilities.forEach(c => {
-          if (!deviceCapabilities.find((dc) => dc === c)) {
-            found = false;
-          }
-        });
-        if (found) {
-          service = entry.service;
-        }
-      }
-    });
-    return service;
   }
 
   public isOnline(): boolean {
@@ -246,7 +250,7 @@ export class MultiServiceAccessory {
 
   // Find return if a capability is supported by the multi-service accessory
   public static capabilitySupported(capability: string): boolean {
-    if (Object.keys(MultiServiceAccessory.capabilityMap).find(c => c === capability) || capability === 'switch') {
+    if (Object.keys(MultiServiceAccessory.capabilityMap).find(c => c === capability)) {
       return true;
     } else {
       return false;
@@ -257,7 +261,7 @@ export class MultiServiceAccessory {
   //   return super.refreshStatus();
   // }
 
-    // Called by subclasses to refresh the status for the device.  Will only refresh if it has been more than
+  // Called by subclasses to refresh the status for the device.  Will only refresh if it has been more than
   // 4 seconds since last refresh
   //
   async refreshStatus(): Promise<boolean> {
@@ -266,7 +270,7 @@ export class MultiServiceAccessory {
       if (Date.now() - this.deviceStatusTimestamp > 5000) {
         // If there is already a call to smartthings to update status for this device, don't issue another one until
         // we return from that.
-        if (this.statusQueryInProgress){
+        if (this.statusQueryInProgress) {
           this.log.debug(`Status query already in progress for ${this.name}.  Waiting...`);
           this.waitFor(() => !this.statusQueryInProgress).then(() => resolve(this.lastStatusResult));
           return;
@@ -330,112 +334,101 @@ export class MultiServiceAccessory {
   // }
 
   startPollingState(pollSeconds: number, getValue: () => Promise<CharacteristicValue>, service: Service,
-  chracteristic: WithUUID<new () => Characteristic>, targetStateCharacteristic?: WithUUID<new () => Characteristic>,
-  getTargetState?: () => Promise<CharacteristicValue>):NodeJS.Timer|void {
+    chracteristic: WithUUID<new () => Characteristic>, targetStateCharacteristic?: WithUUID<new () => Characteristic>,
+    getTargetState?: () => Promise<CharacteristicValue>): NodeJS.Timer | void {
 
-  if (this.platform.config.WebhookToken && this.platform.config.WebhookToken !== '') {
-    return;  // Don't poll if we have a webhook token
-  }
+    if (this.platform.config.WebhookToken && this.platform.config.WebhookToken !== '') {
+      return;  // Don't poll if we have a webhook token
+    }
 
-  if (pollSeconds > 0) {
-    return setInterval(() => {
-      // If we are in the middle of a commmand call, or it hasn't been at least 10 seconds, we don't want to poll.
-      if (this.commandInProgress || Date.now() - this.lastCommandCompleted < 20 * 1000) {
-        // Skip polling until command is complete
-        this.log.debug(`Command in progress, skipping polling for ${this.name}`);
-        return;
-      }
-      if (this.online) {
-        this.log.debug(`${this.name} polling...`);
-        // this.commandInProgress = true;
-        getValue().then((v) => {
-          service.updateCharacteristic(chracteristic, v);
-          this.log.debug(`${this.name} value updated.`);
-        }).catch(() => {  // If we get an error, ignore
-          this.log.warn(`Poll failure on ${this.name}`);
+    if (pollSeconds > 0) {
+      return setInterval(() => {
+        // If we are in the middle of a commmand call, or it hasn't been at least 10 seconds, we don't want to poll.
+        if (this.commandInProgress || Date.now() - this.lastCommandCompleted < 20 * 1000) {
+          // Skip polling until command is complete
+          this.log.debug(`Command in progress, skipping polling for ${this.name}`);
           return;
+        }
+        if (this.online) {
+          this.log.debug(`${this.name} polling...`);
+          // this.commandInProgress = true;
+          getValue().then((v) => {
+            service.updateCharacteristic(chracteristic, v);
+            this.log.debug(`${this.name} value updated.`);
+          }).catch(() => {  // If we get an error, ignore
+            this.log.warn(`Poll failure on ${this.name}`);
+            return;
+          });
+          // Update target if we have to
+          if (targetStateCharacteristic && getTargetState) {
+            //service.updateCharacteristic(targetStateCharacteristic, getTargetState());
+            getTargetState().then(value => service.updateCharacteristic(targetStateCharacteristic, value));
+          }
+        } else {
+          // If we failed this accessory due to errors. Reset the failure count and online status after 10 minutes.
+          if (this.giveUpTime > 0 && (Date.now() - this.giveUpTime > (10 * 60 * 1000))) {
+            this.axInstance.get(this.healthURL)
+              .then(res => {
+                if (res.data.state === 'ONLINE') {
+                  this.online = true;
+                  this.giveUpTime = 0;
+                  this.failureCount = 0;
+                }
+              });
+          }
+        }
+      }, pollSeconds * 1000 + Math.floor(Math.random() * 1000));  // Add a random delay to avoid collisions
+    }
+  }
+
+  async sendCommand(capability: string, command: string, args?: unknown[]): Promise<boolean> {
+    const cmd = new Command(capability, command, args)
+    return this.sendCommands([cmd]);
+  }
+
+  async sendCommands(commands: Command[]): Promise<boolean> {
+    const commandBody = JSON.stringify({ commands: commands });
+    return new Promise((resolve) => {
+      this.waitFor(() => !this.commandInProgress).then(() => {
+        this.commandInProgress = true;
+        this.axInstance.post(this.commandURL, commandBody).then(() => {
+          this.log.debug(`${JSON.stringify(commands)} successful for ${this.name}`);
+          this.deviceStatusTimestamp = 0; // Force a refresh on next poll after a state change
+          this.commandInProgress = false;
+          resolve(true);
+          // Force a small delay so that status fetch is correct
+          // setTimeout(() => {
+          //   this.log.debug(`Delay complete for ${this.name}`);
+          //   this.commandInProgress = false;
+          //   resolve(true);
+          // }, 1500);
+        }).catch((error) => {
+          this.commandInProgress = false;
+          this.log.error(`${JSON.stringify(commands)} failed for ${this.name}: ${error}`);
+          resolve(false);
         });
-        // Update target if we have to
-        if (targetStateCharacteristic && getTargetState) {
-          //service.updateCharacteristic(targetStateCharacteristic, getTargetState());
-          getTargetState().then(value => service.updateCharacteristic(targetStateCharacteristic, value));
-        }
-      } else {
-        // If we failed this accessory due to errors. Reset the failure count and online status after 10 minutes.
-        if (this.giveUpTime > 0 && (Date.now() - this.giveUpTime > (10 * 60 * 1000))) {
-          this.axInstance.get(this.healthURL)
-            .then(res => {
-              if (res.data.state === 'ONLINE') {
-                this.online = true;
-                this.giveUpTime = 0;
-                this.failureCount = 0;
-              }
-            });
-        }
-      }
-    }, pollSeconds * 1000 + Math.floor(Math.random() * 1000));  // Add a random delay to avoid collisions
-  }
-}
-
-async sendCommand(capability: string, command: string, args?: unknown[]): Promise<boolean> {
-
-  let cmd: unknown;
-
-  if (args) {
-    cmd = {
-      capability: capability,
-      command: command,
-      arguments: args,
-    };
-  } else {
-    cmd = {
-      capability: capability,
-      command: command,
-    };
-  }
-
-  const commandBody = JSON.stringify([cmd]);
-  return new Promise((resolve) => {
-    this.waitFor(() => !this.commandInProgress).then(() => {
-      this.commandInProgress = true;
-      this.axInstance.post(this.commandURL, commandBody).then(() => {
-        this.log.debug(`${command} successful for ${this.name}`);
-        this.deviceStatusTimestamp = 0; // Force a refresh on next poll after a state change
-        this.commandInProgress = false;
-        resolve(true);
-        // Force a small delay so that status fetch is correct
-        // setTimeout(() => {
-        //   this.log.debug(`Delay complete for ${this.name}`);
-        //   this.commandInProgress = false;
-        //   resolve(true);
-        // }, 1500);
-      }).catch((error) => {
-        this.commandInProgress = false;
-        this.log.error(`${command} failed for ${this.name}: ${error}`);
-        resolve(false);
       });
     });
-  });
-}
-
-// Wait for the condition to be true.  Will check every 500 ms
-private async waitFor(condition: () => boolean): Promise<void> {
-  if (condition()) {
-    return;
   }
 
-  this.log.debug(`${this.name} command or request is waiting...`);
-  return new Promise(resolve => {
-    const interval = setInterval(() => {
-      if (condition()) {
-        this.log.debug(`${this.name} command or request is proceeding.`);
-        clearInterval(interval);
-        resolve();
-      }
-      this.log.debug(`${this.name} still waiting...`);
-    }, 250);
-  });
-}
+  // Wait for the condition to be true.  Will check every 500 ms
+  private async waitFor(condition: () => boolean): Promise<void> {
+    if (condition()) {
+      return;
+    }
+
+    this.log.debug(`${this.name} command or request is waiting...`);
+    return new Promise(resolve => {
+      const interval = setInterval(() => {
+        if (condition()) {
+          this.log.debug(`${this.name} command or request is proceeding.`);
+          clearInterval(interval);
+          resolve();
+        }
+        this.log.debug(`${this.name} still waiting...`);
+      }, 250);
+    });
+  }
 
   public processEvent(event: ShortEvent): void {
     this.log.debug(`Received events for ${this.name}`);
