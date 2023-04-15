@@ -19,7 +19,7 @@ export class BaseService {
     accessory: PlatformAccessory,
     componentId: string,
     capabilities: string[],
-    multiServiceAccessory:MultiServiceAccessory,
+    multiServiceAccessory: MultiServiceAccessory,
     name: string, deviceStatus) {
 
     this.capabilities = capabilities;
@@ -47,17 +47,17 @@ export class BaseService {
   protected setServiceType(serviceType: WithUUID<typeof Service>) {
     if (this.componentId === 'main') {
       this.service = this.accessory.getService(serviceType) ||
-      this.accessory.addService(serviceType);
+        this.accessory.addService(serviceType);
     } else {
       this.log.debug(`Adding service to alternate component: ${this.componentId}`);
       this.service = this.accessory.getService(`${serviceType.name}-${this.componentId}`) ||
-      this.accessory.addService(serviceType, `${serviceType.name}-${this.componentId}`, `${serviceType.name}-${this.componentId}`);
+        this.accessory.addService(serviceType, `${serviceType.name}-${this.componentId}`, `${serviceType.name}-${this.componentId}`);
     }
 
     this.service.setCharacteristic(this.platform.Characteristic.Name, this.accessory.context.device.label);
   }
 
-  protected async getStatus():Promise<boolean> {
+  protected async getStatus(): Promise<boolean> {
     // if you need to return an error to show the device as "Not Responding" in the Home app:
     // throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     // this.log.debug('Received getMotion() event for ' + this.name);

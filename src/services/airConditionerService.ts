@@ -37,6 +37,11 @@ enum SwitchState {
   Off = "off"
 }
 
+enum OptionalMode {
+  Off = "off",
+  Sleep = "sleep",
+}
+
 export class AirConditionerService extends BaseService {
 
   private temperatureUnit: TemperatureUnit = TemperatureUnit.Celsius
@@ -44,6 +49,7 @@ export class AirConditionerService extends BaseService {
   private thermostatService: Service
   private fanService: Service
   private humidityService: Service | undefined
+  private sleepSwitchService: Service
 
   constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, componentId: string, capabilities: string[],
     multiServiceAccessory: MultiServiceAccessory,
@@ -60,12 +66,15 @@ export class AirConditionerService extends BaseService {
     // Exposing this sensor is optional since some Samsung air conditioner always report 0 as relative humidity level
     if (this.platform.config.ExposeHumiditySensorForAirConditioners)
       this.humidityService = this.setupHumiditySensor(platform, multiServiceAccessory);
+
+    // Expose a switch for the sleep mode. If the sleep mode is not supported, changes to this service will have no effect
+    this.sleepSwitchService = this.setupSleepSwitch(platform, multiServiceAccessory);
   }
 
 
 
   private setupThermostat(platform: IKHomeBridgeHomebridgePlatform, multiServiceAccessory: MultiServiceAccessory): Service {
-    this.log.debug(` Expose Thermostat for ${this.name}`);
+    this.log.debug(`Expose Thermostat for ${this.name}`);
 
     // add thermostat service
     this.setServiceType(platform.Service.Thermostat);
@@ -101,9 +110,9 @@ export class AirConditionerService extends BaseService {
   private setupFan(platform: IKHomeBridgeHomebridgePlatform, multiServiceAccessory: MultiServiceAccessory): Service {
     this.log.debug(`Expose Fan for ${this.name}`);
 
-    this.setServiceType(platform.Service.Fan);
+    this.setServiceType(platform.Service.Fanv2);
 
-    this.service.getCharacteristic(platform.Characteristic.On)
+    this.service.getCharacteristic(platform.Characteristic.Active)
       .onGet(this.getSwitchState.bind(this))
       .onSet(this.setSwitchState.bind(this));
 
@@ -115,11 +124,21 @@ export class AirConditionerService extends BaseService {
       .onSet(this.setFanLevel.bind(this))
       .onGet(this.getFanLevel.bind(this));
 
-    multiServiceAccessory.startPollingState(this.platform.config.PollSensorsSeconds, this.getSwitchState.bind(this), this.service,
-      platform.Characteristic.On);
+    multiServiceAccessory.startPollingState(this.platform.config.PollSensorsSeconds, this.getSwitchState.bind(this), this.service, platform.Characteristic.Active);
 
-    multiServiceAccessory.startPollingState(this.platform.config.PollSensorsSeconds, this.getFanLevel.bind(this), this.service,
-      platform.Characteristic.RotationSpeed);
+    multiServiceAccessory.startPollingState(this.platform.config.PollSensorsSeconds, this.getFanLevel.bind(this), this.service, platform.Characteristic.RotationSpeed);
+
+    return this.service;
+  }
+
+  private setupSleepSwitch(platform: IKHomeBridgeHomebridgePlatform, multiServiceAccessory: MultiServiceAccessory): Service {
+    this.setServiceType(platform.Service.Switch);
+
+    this.service.getCharacteristic(platform.Characteristic.On)
+      .onGet(this.getSleepSwitchState.bind(this))
+      .onSet(this.setSleepSwitchState.bind(this));
+
+    multiServiceAccessory.startPollingState(this.platform.config.PollSensorsSeconds, this.getSleepSwitchState.bind(this), this.service, platform.Characteristic.On);
 
     return this.service;
   }
@@ -180,6 +199,17 @@ export class AirConditionerService extends BaseService {
       case FanOscillationMode.Fixed:
         return this.platform.Characteristic.SwingMode.SWING_DISABLED;
     }
+  }
+
+
+  private async setSleepSwitchState(value: CharacteristicValue): Promise<void> {
+    const mode = value ? OptionalMode.Sleep : OptionalMode.Off;
+    this.sendCommandsOrFail([new Command('custom.airConditionerOptionalMode', 'setAcOptionalMode', [mode])]);
+  }
+
+  private async getSleepSwitchState(): Promise<CharacteristicValue> {
+    const deviceStatus = await this.getDeviceStatus();
+    return deviceStatus['custom.airConditionerOptionalMode'].acOptionalMode.value === OptionalMode.Sleep;
   }
 
   // Switch state is managed by the Fan service.
@@ -425,10 +455,12 @@ export class AirConditionerService extends BaseService {
         this.fanService.updateCharacteristic(this.platform.Characteristic.SwingMode, this.fanOscillationModeToSwingMode(fanOscillationMode));
         break;
       case 'switch':
-        this.fanService.updateCharacteristic(this.platform.Characteristic.On, event.value === SwitchState.On);
+        this.fanService.updateCharacteristic(this.platform.Characteristic.Active, event.value === SwitchState.On);
         break;
       case 'relativeHumidityMeasurement':
         this.humidityService?.updateCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity, event.value);
+      case 'custom.airConditionerOptionalMode':
+        this.sleepSwitchService?.updateCharacteristic(this.platform.Characteristic.On, event.value === OptionalMode.Sleep);
       default:
         this.log.info(`[${this.name}] Ignore event updating ${event.capability} capability to ${event.value}`);
         break;

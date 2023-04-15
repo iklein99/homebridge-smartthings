@@ -84,7 +84,8 @@ export class MultiServiceAccessory {
         'fanOscillationMode',
         'thermostatCoolingSetpoint',
         'temperatureMeasurement',
-        'relativeHumidityMeasurement'
+        'relativeHumidityMeasurement',
+        'custom.airConditionerOptionalMode'
       ],
       service: AirConditionerService,
     },
