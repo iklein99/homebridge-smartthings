@@ -121,13 +121,15 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
           }
           let deviceName = '';
           try {
-            deviceName = device.label.toString().replaceAll(String.fromCharCode(8217), '\'');
+            // deviceName = device.label.toString().replaceAll(String.fromCharCode(8217), '\'');
+            deviceName = device.label;
           } catch(error) {
             this.log.warn(`Error getting device name for ${device.label}: ${error}`);
             deviceName = device.label;
           }
           if (this.config.IgnoreDevices &&
-            this.config.IgnoreDevices.find(d => d.replaceAll(String.fromCharCode(8217), '\'').toLowerCase() === deviceName.toLowerCase())) {
+          //this.config.IgnoreDevices.find(d => d.replaceAll(String.fromCharCode(8217), '\'').toLowerCase() === deviceName.toLowerCase())) {
+            this.config.IgnoreDevices.find(d => d.toLowerCase() === deviceName.toLowerCase())) {
             this.log.info(`Ignoring ${device.label} because it is in the Ignore Devices list`);
             return;
           }

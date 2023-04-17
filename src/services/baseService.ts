@@ -47,7 +47,7 @@ export class BaseService {
   protected setServiceType(serviceType: WithUUID<typeof Service>) {
     if (this.componentId === 'main') {
       this.service = this.accessory.getService(serviceType) ||
-      this.accessory.addService(serviceType);
+      this.accessory.addService(serviceType as unknown as Service);
     } else {
       this.log.debug(`Adding service to alternate component: ${this.componentId}`);
       this.service = this.accessory.getService(`${serviceType.name}-${this.componentId}`) ||
