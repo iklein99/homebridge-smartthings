@@ -60,6 +60,12 @@
         "required": false,
         "default": 10
       },
+      "PollWindowShadesSeconds": {
+        "title": "Poll Window Shades (zero = don't poll)",
+        "type": "integer",
+        "required": false,
+        "default": 20
+      },
       "IgnoreLocations": {
         "title": "Locations to Ignore",
         "type": "array",

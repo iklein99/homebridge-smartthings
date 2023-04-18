@@ -12,6 +12,8 @@
 This is yet another smartthings plugin for Homebridge.  This requires no access to the legacy smartthings app, and doesn't
 require a lot of work to install.  It will discover devices automatically as well as unregister devices that are removed
 from your smarttthings network.  This is currently under development.
+
+## Fixed in version 1.5.10-beta.0
 ## Fixed in version 1.5.9
 * Removed the check for the apostrophe as it caused more issues than solved.  With this change, if you try to add a device
 that has a label like "bill's iphone" it may not get excluded, but it solves other issues.

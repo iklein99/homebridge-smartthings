@@ -21,7 +21,7 @@ import { CarbonMonoxideDetectorService } from './services/carbonMonoxideDetector
 import { ValveService } from './services/valveService';
 import { ShortEvent } from './webhook/subscriptionHandler';
 import { FanSpeedService } from './services/fanSpeedService';
-import { WindowCoveriingService } from './services/windowCoveringService';
+import { WindowCoveringService } from './services/windowCoveringService';
 import { ThermostatService } from './services/thermostatService';
 import { StatelessProgrammableSwitchService } from './services/statelessProgrammableSwitchService';
 
@@ -58,7 +58,7 @@ export class MultiServiceAccessory {
     'doorControl': DoorService,
     'lock': LockService,
     // 'switch': SwitchService,
-    'windowShadeLevel': WindowCoveriingService,
+    //'windowShadeLevel': WindowCoveriingService,
     'motionSensor': MotionService,
     'waterSensor': LeakDetectorService,
     'smokeDetector': SmokeDetectorService,
@@ -109,6 +109,10 @@ export class MultiServiceAccessory {
         'thermostatHeatingSetpoint',
         'thermostatCoolingSetpoint'],
       service: ThermostatService,
+    },
+    {
+      capabilities: ['windowShade', 'windowShadeLevel'],
+      service: WindowCoveringService,
     },
   ];
 
@@ -207,7 +211,7 @@ export class MultiServiceAccessory {
           ));
       }
     });
-    if (capabilities.find(c => (c === 'switch') || c === 'thermostatMode')) {
+    if (capabilities.find(c => (c === 'switch') || c === 'thermostatMode' || c === 'windowShadeLevel')) {
       let service = this.findComboService(capabilities);
       if (service === undefined) {
         service = SwitchService;
