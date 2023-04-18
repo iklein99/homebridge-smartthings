@@ -153,6 +153,8 @@ export class WindowCoveringService extends BaseService {
           } else {
             this.currentPositionState = this.states.stopped;
           }
+          this.log.debug(`getCurrentPositionState() SUCCESSFUL for ${this.name} return value ${state}, ` +
+            `setting to ${this.currentPositionState}`);
           resolve(this.currentPositionState);
         } else {
           this.log.error('getCurrentPositionState() FAILED for ' + this.name);
@@ -225,6 +227,7 @@ export class WindowCoveringService extends BaseService {
       } else {
         this.currentPositionState = this.states.stopped;
       }
+      this.log.debug(`From event, setting characteristic to ${this.currentPositionState}`);
       this.service.updateCharacteristic(this.platform.Characteristic.PositionState, this.currentPositionState);
     }
   }
