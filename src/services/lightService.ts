@@ -140,7 +140,7 @@ export class LightService extends BaseService {
 
     return new Promise<CharacteristicValue>((resolve, reject) => {
       if (!this.multiServiceAccessory.isOnline()) {
-        this.log.error(this.accessory.context.device.label + 'is offline');
+        this.log.error(this.accessory.context.device.label + ' is offline');
         return reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
       }
       this.getStatus().then((success) => {
