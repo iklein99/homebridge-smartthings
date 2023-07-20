@@ -59,7 +59,7 @@ export class MultiServiceAccessory {
     'doorControl': DoorService,
     'lock': LockService,
     'switch': SwitchService,
-    'windowShadeLevel': WindowCoveriingService,
+    'windowShadeLevel': WindowCoveringService,
     'motionSensor': MotionService,
     'waterSensor': LeakDetectorService,
     'smokeDetector': SmokeDetectorService,
@@ -85,7 +85,7 @@ export class MultiServiceAccessory {
         'thermostatCoolingSetpoint',
         'temperatureMeasurement',
         'relativeHumidityMeasurement',
-        'custom.airConditionerOptionalMode'
+        'custom.airConditionerOptionalMode',
       ],
       service: AirConditionerService,
     },
@@ -195,11 +195,17 @@ export class MultiServiceAccessory {
       });
   }
 
-  private registerServiceIfMatchesCapabilities(componentId: string, component: any, capabilitiesToCover: string[], capabilities: string[], serviceConstructor: any): string[] {
-    this.log.debug(`Registering ${serviceConstructor.name} for capabilities ${capabilities}`);
-    // ignore services which cannot cover all required capabilities 
+  private registerServiceIfMatchesCapabilities(
+    componentId: string,
+    component: any,
+    capabilitiesToCover: string[],
+    capabilities: string[],
+    serviceConstructor: any,
+  ): string[] {
+    // this.log.debug(`Testing ${serviceConstructor.name} for capabilities ${capabilitiesToCover}`);
+    // ignore services which cannot cover all required capabilities
     if (!capabilities.every(e => capabilitiesToCover.includes(e))) {
-      this.log.debug(`Ignoring ${serviceConstructor.name}`);
+      // this.log.debug(`Ignoring ${serviceConstructor.name}`);
       return capabilitiesToCover;
     }
 
@@ -233,7 +239,7 @@ export class MultiServiceAccessory {
           component,
           capabilitiesToCover,
           entry.capabilities,
-          entry.service
+          entry.service,
         );
       });
 
@@ -244,7 +250,7 @@ export class MultiServiceAccessory {
         component,
         capabilitiesToCover,
         [capability],
-        service
+        service,
       );
     });
   }
@@ -387,7 +393,7 @@ export class MultiServiceAccessory {
   }
 
   async sendCommand(capability: string, command: string, args?: unknown[]): Promise<boolean> {
-    const cmd = new Command(capability, command, args)
+    const cmd = new Command(capability, command, args);
     return this.sendCommands([cmd]);
   }
 

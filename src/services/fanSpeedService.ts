@@ -85,9 +85,9 @@ export class FanSpeedService extends BaseService {
       // Level is 0 (off), 1 (low), 2 (medium), 3 (high)
       if (value === 0) {
         level = 0;
-      } else if (value <= 33) {
+      } else if (value as number <= 33) {
         level = 1;
-      } else if (value <= 66) {
+      } else if (value as number <= 66) {
         level = 2;
       } else {
         level = 3;

@@ -14,7 +14,7 @@ require a lot of work to install.  It will discover devices automatically as wel
 from your smarttthings network.  This is currently under development.
 
 ## Fixed in version 1.5.10
-Fixed window share support including webhook support for the window shade service.  Added polling paramter for window shades, 
+Fixed window shade support including webhook support for the window shade service.  Added polling paramter for window shades, 
 'PollWindowShadesSeconds'
 ## Fixed in version 1.5.9
 * Removed the check for the apostrophe as it caused more issues than solved.  With this change, if you try to add a device
