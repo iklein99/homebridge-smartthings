@@ -121,3 +121,5 @@ dist
 
 # other files
 excluded/
+**/.DS_Store
+.DS_Store
