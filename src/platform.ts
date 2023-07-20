@@ -31,7 +31,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
   });
 
   private accessoryObjects: MultiServiceAccessory[] = [];
-  private subscriptionHandler: SubscriptionHandler|undefined = undefined;
+  private subscriptionHandler: SubscriptionHandler | undefined = undefined;
 
   constructor(
     public readonly log: Logger,
@@ -255,7 +255,7 @@ export class IKHomeBridgeHomebridgePlatform implements DynamicPlatformPlugin {
     //   capabilities = device.components[0].capabilities;
     // }
 
-    const acc =  new MultiServiceAccessory(this, accessory);
+    const acc = new MultiServiceAccessory(this, accessory);
     device.components.forEach(component => {
       acc.addComponent(component.id, component.capabilities.map((c) => c.id));
     });
