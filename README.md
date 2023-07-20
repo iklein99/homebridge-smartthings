@@ -12,7 +12,9 @@
 This is yet another smartthings plugin for Homebridge.  This requires no access to the legacy smartthings app, and doesn't
 require a lot of work to install.  It will discover devices automatically as well as unregister devices that are removed
 from your smarttthings network.  This is currently under development.
-
+## Fixed / New in version 1.5.11
+* Added air conditioner support thanks to lucaponzanelli
+* Fixed window shade support (wasn't showing up)
 ## Fixed in version 1.5.10
 Fixed window shade support including webhook support for the window shade service.  Added polling paramter for window shades, 
 'PollWindowShadesSeconds'
