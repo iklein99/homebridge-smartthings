@@ -66,6 +66,12 @@
         "required": false,
         "default": 20
       },
+      "ExposeHumiditySensorForAirConditioners": {
+        "title": "Expose humidity Sensor for air Conditioners if available.",
+        "type": "boolean",
+        "required": false,
+        "default": false
+      },
       "IgnoreLocations": {
         "title": "Locations to Ignore",
         "type": "array",
