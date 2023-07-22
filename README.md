@@ -9,9 +9,11 @@
 
 # Smartthings Homebridge Plugin 
 
-This is yet another smartthings plugin for Homebridge.  This requires no access to the legacy smartthings app, and doesn't
+This is a smartthings plugin for Homebridge.  This requires no access to the legacy smartthings app, and doesn't
 require a lot of work to install.  It will discover devices automatically as well as unregister devices that are removed
 from your smarttthings network.  This is currently under development.
+## New in version 1.5.12
+* Updated dependencies
 ## Fixed / New in version 1.5.11
 * Added air conditioner support thanks to lucaponzanelli
 * Fixed window shade support (wasn't showing up)
