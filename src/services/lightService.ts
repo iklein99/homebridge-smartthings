@@ -149,12 +149,17 @@ export class LightService extends BaseService {
           return reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         }
 
-        if (this.deviceStatus.status.switchLevel.level.value !== undefined) {
-          level = this.deviceStatus.status.switchLevel.level.value;
-          this.log.debug('getLevel() SUCCESSFUL for ' + this.name + '. value = ' + level);
-          resolve(level);
-        } else {
-          this.log.error('getLevel() FAILED for ' + this.name + '. Undefined value');
+        try {
+          if (this.deviceStatus.status.switchLevel.level.value !== undefined) {
+            level = this.deviceStatus.status.switchLevel.level.value;
+            this.log.debug('getLevel() SUCCESSFUL for ' + this.name + '. value = ' + level);
+            resolve(level);
+          } else {
+            this.log.error('getLevel() FAILED for ' + this.name + '. Undefined value');
+            reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+          }
+        } catch (e) {
+          this.log.error('getLevel() FAILED for ' + this.name + '. Error: ' + e);
           reject(new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
         }
       });
@@ -337,7 +342,7 @@ export class LightService extends BaseService {
   }
 
   public processEvent(event: ShortEvent): void {
-    switch(event.capability) {
+    switch (event.capability) {
       case 'switch': {
         this.log.debug(`Event updating switch capability for ${this.name} to ${event.value}`);
         this.service.updateCharacteristic(this.platform.Characteristic.On, event.value === 'on');
