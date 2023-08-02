@@ -6,50 +6,50 @@ import { ShortEvent } from '../webhook/subscriptionHandler';
 import { BaseService } from './baseService';
 
 enum AirConditionerMode {
-  Auto = "auto",
-  Cool = "cool",
-  Dry = "dry",
-  Heat = "heat",
-  Wind = "wind"
+  Auto = 'auto',
+  Cool = 'cool',
+  Dry = 'dry',
+  Heat = 'heat',
+  Wind = 'wind'
 }
 
 enum TemperatureUnit {
-  Celsius = "C",
-  Farenheit = "F"
+  Celsius = 'C',
+  Farenheit = 'F'
 }
 
 enum FanMode {
-  Auto = "auto",
-  Low = "low",
-  Medium = "medium",
-  High = "high",
-  Turbo = "turbo"
+  Auto = 'auto',
+  Low = 'low',
+  Medium = 'medium',
+  High = 'high',
+  Turbo = 'turbo'
 }
 
 enum FanOscillationMode {
-  All = "all",
-  Fixed = "fixed",
-  Vertical = "vertical"
+  All = 'all',
+  Fixed = 'fixed',
+  Vertical = 'vertical'
 }
 
 enum SwitchState {
-  On = "on",
-  Off = "off"
+  On = 'on',
+  Off = 'off'
 }
 
 enum OptionalMode {
-  Off = "off",
-  Sleep = "sleep",
+  Off = 'off',
+  Sleep = 'sleep',
 }
 
 export class AirConditionerService extends BaseService {
 
-  private temperatureUnit: TemperatureUnit = TemperatureUnit.Celsius
+  private temperatureUnit: TemperatureUnit = TemperatureUnit.Celsius;
 
-  private thermostatService: Service
-  private fanService: Service
-  private humidityService: Service | undefined
-  private sleepSwitchService: Service
+  private thermostatService: Service;
+  private fanService: Service;
+  private humidityService: Service | undefined;
+  private sleepSwitchService: Service;
 
   constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, componentId: string, capabilities: string[],
     multiServiceAccessory: MultiServiceAccessory,
@@ -64,8 +64,9 @@ export class AirConditionerService extends BaseService {
     this.fanService = this.setupFan(platform, multiServiceAccessory);
 
     // Exposing this sensor is optional since some Samsung air conditioner always report 0 as relative humidity level
-    if (this.platform.config.ExposeHumiditySensorForAirConditioners)
+    if (this.platform.config.ExposeHumiditySensorForAirConditioners) {
       this.humidityService = this.setupHumiditySensor(platform, multiServiceAccessory);
+    }
 
     // Expose a switch for the sleep mode. If the sleep mode is not supported, changes to this service will have no effect
     this.sleepSwitchService = this.setupSleepSwitch(platform, multiServiceAccessory);
@@ -96,7 +97,8 @@ export class AirConditionerService extends BaseService {
     this.service.getCharacteristic(platform.Characteristic.TemperatureDisplayUnits)
       .onGet(this.getTemperatureDisplayUnits.bind(this));
 
-    multiServiceAccessory.startPollingState(this.platform.config.PollSensorsSeconds, this.getCurrentHeatingCoolingState.bind(this), this.service,
+    multiServiceAccessory.startPollingState(this.platform.config.PollSensorsSeconds, this.getCurrentHeatingCoolingState.bind(this),
+      this.service,
       platform.Characteristic.CurrentHeatingCoolingState, platform.Characteristic.TargetHeatingCoolingState,
       this.getTargetHeatingCoolingState.bind(this));
 
@@ -124,9 +126,11 @@ export class AirConditionerService extends BaseService {
       .onSet(this.setFanLevel.bind(this))
       .onGet(this.getFanLevel.bind(this));
 
-    multiServiceAccessory.startPollingState(this.platform.config.PollSensorsSeconds, this.getSwitchState.bind(this), this.service, platform.Characteristic.Active);
+    multiServiceAccessory.startPollingState(this.platform.config.PollSensorsSeconds,
+      this.getSwitchState.bind(this), this.service, platform.Characteristic.Active);
 
-    multiServiceAccessory.startPollingState(this.platform.config.PollSensorsSeconds, this.getFanLevel.bind(this), this.service, platform.Characteristic.RotationSpeed);
+    multiServiceAccessory.startPollingState(this.platform.config.PollSensorsSeconds,
+      this.getFanLevel.bind(this), this.service, platform.Characteristic.RotationSpeed);
 
     return this.service;
   }
@@ -138,7 +142,8 @@ export class AirConditionerService extends BaseService {
       .onGet(this.getSleepSwitchState.bind(this))
       .onSet(this.setSleepSwitchState.bind(this));
 
-    multiServiceAccessory.startPollingState(this.platform.config.PollSensorsSeconds, this.getSleepSwitchState.bind(this), this.service, platform.Characteristic.On);
+    multiServiceAccessory.startPollingState(this.platform.config.PollSensorsSeconds,
+      this.getSleepSwitchState.bind(this), this.service, platform.Characteristic.On);
 
     return this.service;
   }
@@ -156,22 +161,26 @@ export class AirConditionerService extends BaseService {
   }
 
   private async getHumidityLevel(): Promise<CharacteristicValue> {
-    const deviceStatus = await this.getDeviceStatus()
+    const deviceStatus = await this.getDeviceStatus();
     return deviceStatus.relativeHumidityMeasurement.humidity.value;
   }
 
   private levelToFanMode(level: number): string {
-    if (level > 0 && level < 25)
+    if (level > 0 && level < 25) {
       return FanMode.Low;
+    }
 
-    if (level > 25 && level <= 50)
+    if (level > 25 && level <= 50) {
       return FanMode.Medium;
+    }
 
-    if (level > 50 && level <= 75)
+    if (level > 50 && level <= 75) {
       return FanMode.High;
+    }
 
-    if (level > 75)
+    if (level > 75) {
       return FanMode.Turbo;
+    }
 
     return FanMode.Auto;
   }
@@ -187,7 +196,7 @@ export class AirConditionerService extends BaseService {
       case FanMode.Turbo:
         return 100;
       default:
-        return 0; // auto level  
+        return 0; // auto level
     }
   }
 
@@ -218,8 +227,8 @@ export class AirConditionerService extends BaseService {
     const CurrentHeatingCoolingState = this.platform.Characteristic.CurrentHeatingCoolingState;
     const heatingCoolingState = await this.getCurrentHeatingCoolingState();
     const currentAirConditionerMode = this.targetHeatingCoolingStateToAirConditionerMode(heatingCoolingState);
-    const airConditionerMode = heatingCoolingState == CurrentHeatingCoolingState.OFF ? AirConditionerMode.Wind : currentAirConditionerMode;
-    const switchState = value ? SwitchState.On : SwitchState.Off
+    const airConditionerMode = heatingCoolingState === CurrentHeatingCoolingState.OFF ? AirConditionerMode.Wind : currentAirConditionerMode;
+    const switchState = value ? SwitchState.On : SwitchState.Off;
 
 
     if (switchState === SwitchState.On) {
@@ -227,8 +236,8 @@ export class AirConditionerService extends BaseService {
       await this.sendCommandsOrFail(
         [
           new Command('switch', switchState),
-          new Command('airConditionerMode', 'setAirConditionerMode', [airConditionerMode])
-        ]
+          new Command('airConditionerMode', 'setAirConditionerMode', [airConditionerMode]),
+        ],
       );
       return;
     }
@@ -253,8 +262,9 @@ export class AirConditionerService extends BaseService {
   private async getFanLevel(): Promise<CharacteristicValue> {
     this.log.debug(`[${this.name}] get fan level`);
     const deviceStatus = await this.getDeviceStatus();
-    if (!deviceStatus.airConditionerFanMode.fanMode.value)
+    if (!deviceStatus.airConditionerFanMode.fanMode.value) {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.RESOURCE_DOES_NOT_EXIST);
+    }
 
     const fanMode = this.deviceStatus.status.airConditionerFanMode.fanMode.value;
     return this.fanModeToLevel(fanMode);
@@ -272,13 +282,13 @@ export class AirConditionerService extends BaseService {
   private async getSwingMode(): Promise<CharacteristicValue> {
     this.log.debug(`[${this.name}] get fan swing mode`);
     const deviceStatus = await this.getDeviceStatus();
-    const swingMode = deviceStatus.fanOscillationMode.fanOscillationMode.value as FanOscillationMode
+    const swingMode = deviceStatus.fanOscillationMode.fanOscillationMode.value as FanOscillationMode;
     return this.fanOscillationModeToSwingMode(swingMode);
   }
 
 
   private airConditionerModeToTargetHeatingCoolingState(airConditionerMode: AirConditionerMode): CharacteristicValue {
-    const TargetHeatingCoolingState = this.platform.Characteristic.TargetHeatingCoolingState
+    const TargetHeatingCoolingState = this.platform.Characteristic.TargetHeatingCoolingState;
     switch (airConditionerMode) {
       case AirConditionerMode.Dry:
       case AirConditionerMode.Cool:
@@ -294,14 +304,14 @@ export class AirConditionerService extends BaseService {
   }
 
   private targetHeatingCoolingStateToAirConditionerMode(targetHeatingCoolingState: CharacteristicValue): AirConditionerMode | undefined {
-    const TargetHeatingCoolingState = this.platform.Characteristic.TargetHeatingCoolingState
+    const TargetHeatingCoolingState = this.platform.Characteristic.TargetHeatingCoolingState;
     switch (targetHeatingCoolingState) {
       case TargetHeatingCoolingState.AUTO:
         return AirConditionerMode.Auto;
       case TargetHeatingCoolingState.COOL:
         return AirConditionerMode.Cool;
       case TargetHeatingCoolingState.HEAT:
-        return AirConditionerMode.Heat
+        return AirConditionerMode.Heat;
       default:
         return undefined;
     }
@@ -309,13 +319,14 @@ export class AirConditionerService extends BaseService {
 
   private async getTargetHeatingCoolingState(): Promise<CharacteristicValue> {
     this.log.debug(`[${this.name}] get target heating cooling state`);
-    const deviceStatus = await this.getDeviceStatus()
+    const deviceStatus = await this.getDeviceStatus();
 
     const isOff = deviceStatus.switch.switch.value === 'off';
     const airConditionerMode = deviceStatus.airConditionerMode.airConditionerMode.value as AirConditionerMode;
 
-    if (isOff || !airConditionerMode)
+    if (isOff || !airConditionerMode) {
       return this.platform.Characteristic.TargetHeatingCoolingState.OFF;
+    }
 
     return this.airConditionerModeToTargetHeatingCoolingState(airConditionerMode);
   }
@@ -324,18 +335,18 @@ export class AirConditionerService extends BaseService {
   private async setTargetHeatingCoolingState(value: CharacteristicValue): Promise<void> {
     const airConditionerMode = this.targetHeatingCoolingStateToAirConditionerMode(value);
     this.log.info(`[${this.name}] set target heating cooling state to ${airConditionerMode}`);
-    // When switching between modes, we always ask to turn on the air conditioner unless 
+    // When switching between modes, we always ask to turn on the air conditioner unless
     // the thermostat is set to off.
 
     const commands = airConditionerMode ?
       [
         new Command('switch', SwitchState.On),
-        new Command('airConditionerMode', 'setAirConditionerMode', [airConditionerMode])
+        new Command('airConditionerMode', 'setAirConditionerMode', [airConditionerMode]),
       ]
       :
       [
         new Command('switch', SwitchState.Off),
-      ]
+      ];
 
     await this.sendCommandsOrFail(commands);
   }
@@ -344,14 +355,15 @@ export class AirConditionerService extends BaseService {
   private async getCurrentHeatingCoolingState(): Promise<CharacteristicValue> {
     this.log.debug(`[${this.name}] get current heating cooling state`);
     const deviceStatus = await this.getDeviceStatus();
-    const CurrentHeatingCoolingState = this.platform.Characteristic.CurrentHeatingCoolingState
+    const CurrentHeatingCoolingState = this.platform.Characteristic.CurrentHeatingCoolingState;
     const airConditionerMode = deviceStatus.airConditionerMode.airConditionerMode.value as AirConditionerMode;
     const coolingSetpoint = this.toCelsius(deviceStatus.thermostatCoolingSetpoint.coolingSetpoint.value);
-    const temperature = this.toCelsius(deviceStatus.temperatureMeasurement.temperature.value)
+    const temperature = this.toCelsius(deviceStatus.temperatureMeasurement.temperature.value);
     const isOff = deviceStatus.switch.switch.value === SwitchState.Off;
 
-    if (isOff)
+    if (isOff) {
       return this.platform.Characteristic.CurrentHeatingCoolingState.OFF;
+    }
 
     switch (airConditionerMode) {
       case AirConditionerMode.Cool:
@@ -359,7 +371,7 @@ export class AirConditionerService extends BaseService {
       case AirConditionerMode.Heat:
         return CurrentHeatingCoolingState.HEAT;
       case AirConditionerMode.Auto:
-        return temperature > coolingSetpoint ? CurrentHeatingCoolingState.COOL : CurrentHeatingCoolingState.HEAT
+        return temperature > coolingSetpoint ? CurrentHeatingCoolingState.COOL : CurrentHeatingCoolingState.HEAT;
       default:
         return this.platform.Characteristic.CurrentHeatingCoolingState.OFF;
     }
@@ -368,13 +380,14 @@ export class AirConditionerService extends BaseService {
   private async getCurrentTemperature(): Promise<CharacteristicValue> {
     this.log.debug(`[${this.name}] get current temperature`);
 
-    const deviceStatus = await this.getDeviceStatus()
+    const deviceStatus = await this.getDeviceStatus();
 
-    const temp = deviceStatus.temperatureMeasurement.temperature.value
-    const unit = deviceStatus.temperatureMeasurement.temperature.unit as TemperatureUnit
+    const temp = deviceStatus.temperatureMeasurement.temperature.value;
+    const unit = deviceStatus.temperatureMeasurement.temperature.unit as TemperatureUnit;
 
-    if (!temp || !unit)
+    if (!temp || !unit) {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.RESOURCE_DOES_NOT_EXIST);
+    }
 
     return this.toCelsius(temp);
 
@@ -383,11 +396,12 @@ export class AirConditionerService extends BaseService {
 
   private async getTargetTemperature(): Promise<CharacteristicValue> {
     this.log.debug(`[${this.name}] get target temperature`);
-    const deviceStatus = await this.getDeviceStatus()
+    const deviceStatus = await this.getDeviceStatus();
     const coolingSetpoint = deviceStatus.thermostatCoolingSetpoint.coolingSetpoint.value;
 
-    if (!coolingSetpoint)
+    if (!coolingSetpoint) {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.RESOURCE_DOES_NOT_EXIST);
+    }
 
     return this.toCelsius(coolingSetpoint);
   }
@@ -396,8 +410,8 @@ export class AirConditionerService extends BaseService {
     this.log.info(`[${this.name}] set target temperature to ${value}`);
 
     const convertedTemp = this.fromCelsius(value as number);
-    const command = new Command('thermostatCoolingSetpoint', 'setCoolingSetpoint', [convertedTemp])
-    return this.sendCommandsOrFail([command])
+    const command = new Command('thermostatCoolingSetpoint', 'setCoolingSetpoint', [convertedTemp]);
+    return this.sendCommandsOrFail([command]);
   }
 
   private getTemperatureDisplayUnits(): CharacteristicValue {
@@ -423,44 +437,54 @@ export class AirConditionerService extends BaseService {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
 
-    if (!await this.multiServiceAccessory.sendCommands(commands))
-      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE)
+    if (!await this.multiServiceAccessory.sendCommands(commands)) {
+      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+    }
 
   }
 
   private async getDeviceStatus(): Promise<any> {
-    this.multiServiceAccessory.forceNextStatusRefresh()
-    if (!await this.getStatus())
+    this.multiServiceAccessory.forceNextStatusRefresh();
+    if (!await this.getStatus()) {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    return this.deviceStatus.status
+    }
+    return this.deviceStatus.status;
   }
 
   public processEvent(event: ShortEvent): void {
-    const TargetHeatingCoolingState = this.platform.Characteristic.TargetHeatingCoolingState
+    const TargetHeatingCoolingState = this.platform.Characteristic.TargetHeatingCoolingState;
     this.log.info(`[${this.name}] Event updating ${event.capability} capability to ${event.value}`);
+
+    let temperature: number;
+    let targetHeatingCoolingState: CharacteristicValue;
+    let fanOscillationMode: FanOscillationMode;
+
     switch (event.capability) {
       case 'thermostatCoolingSetpoint':
-        const temperature = this.toCelsius(event.value);
+        temperature = this.toCelsius(event.value);
         this.thermostatService.updateCharacteristic(this.platform.Characteristic.TargetTemperature, temperature);
         break;
       case 'airConditionerMode':
-        const targetHeatingCoolingState = this.airConditionerModeToTargetHeatingCoolingState(event.value);
+        targetHeatingCoolingState = this.airConditionerModeToTargetHeatingCoolingState(event.value);
         this.thermostatService.updateCharacteristic(TargetHeatingCoolingState, targetHeatingCoolingState);
         break;
       case 'airConditionerFanMode':
         this.fanService.updateCharacteristic(this.platform.Characteristic.RotationSpeed, this.fanModeToLevel(event.value));
         break;
       case 'fanOscillationMode':
-        const fanOscillationMode = event.value as FanOscillationMode
-        this.fanService.updateCharacteristic(this.platform.Characteristic.SwingMode, this.fanOscillationModeToSwingMode(fanOscillationMode));
+        fanOscillationMode = event.value as FanOscillationMode;
+        this.fanService.updateCharacteristic(this.platform.Characteristic.SwingMode,
+          this.fanOscillationModeToSwingMode(fanOscillationMode));
         break;
       case 'switch':
         this.fanService.updateCharacteristic(this.platform.Characteristic.Active, event.value === SwitchState.On);
         break;
       case 'relativeHumidityMeasurement':
         this.humidityService?.updateCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity, event.value);
+        break;
       case 'custom.airConditionerOptionalMode':
         this.sleepSwitchService?.updateCharacteristic(this.platform.Characteristic.On, event.value === OptionalMode.Sleep);
+        break;
       default:
         this.log.info(`[${this.name}] Ignore event updating ${event.capability} capability to ${event.value}`);
         break;
