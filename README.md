@@ -12,6 +12,8 @@
 This is a smartthings plugin for Homebridge.  This requires no access to the legacy smartthings app, and doesn't
 require a lot of work to install.  It will discover devices automatically as well as unregister devices that are removed
 from your smarttthings network.  This is currently under development.
+## New in version 1.5.14
+* Support for air conditioners optional modes (i.e., Sleep, Speed, WindFree, WindFreeSleep)
 ## Fixed in version 1.5.13
 * Handle invalid response to "getLevel" call in lightservice.  There is a Zooz driver that 
 does not return a valid response causing homebridge to fail.
