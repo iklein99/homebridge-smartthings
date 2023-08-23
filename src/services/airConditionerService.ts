@@ -40,6 +40,9 @@ enum SwitchState {
 enum OptionalMode {
   Off = 'off',
   Sleep = 'sleep',
+  Speed = 'speed',
+  WindFree = 'windFree',
+  WindFreeSleep = 'windFreeSleep'
 }
 
 export class AirConditionerService extends BaseService {
@@ -49,7 +52,8 @@ export class AirConditionerService extends BaseService {
   private thermostatService: Service;
   private fanService: Service;
   private humidityService: Service | undefined;
-  private sleepSwitchService: Service;
+  private optionalModeSwitchService: Service | undefined;
+  private optionalMode: OptionalMode | undefined;
 
   constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, componentId: string, capabilities: string[],
     multiServiceAccessory: MultiServiceAccessory,
@@ -68,8 +72,12 @@ export class AirConditionerService extends BaseService {
       this.humidityService = this.setupHumiditySensor(platform, multiServiceAccessory);
     }
 
-    // Expose a switch for the sleep mode. If the sleep mode is not supported, changes to this service will have no effect
-    this.sleepSwitchService = this.setupSleepSwitch(platform, multiServiceAccessory);
+    this.optionalMode = OptionalMode[this.platform.config.OptionalModeForAirConditioners];
+
+    // Expose a switch for the optional mode. 
+    // If the selected optional mode is undefined or not supported, changes to the switch will have no effect.
+    this.optionalModeSwitchService = this.setupOptionalModeSwitch(platform, multiServiceAccessory);
+
   }
 
 
@@ -135,15 +143,15 @@ export class AirConditionerService extends BaseService {
     return this.service;
   }
 
-  private setupSleepSwitch(platform: IKHomeBridgeHomebridgePlatform, multiServiceAccessory: MultiServiceAccessory): Service {
+  private setupOptionalModeSwitch(platform: IKHomeBridgeHomebridgePlatform, multiServiceAccessory: MultiServiceAccessory): Service {
     this.setServiceType(platform.Service.Switch);
 
     this.service.getCharacteristic(platform.Characteristic.On)
-      .onGet(this.getSleepSwitchState.bind(this))
-      .onSet(this.setSleepSwitchState.bind(this));
+      .onGet(this.getOptionalModeSwitchState.bind(this))
+      .onSet(this.setOptionalModeSwitchState.bind(this));
 
     multiServiceAccessory.startPollingState(this.platform.config.PollSensorsSeconds,
-      this.getSleepSwitchState.bind(this), this.service, platform.Characteristic.On);
+      this.getOptionalModeSwitchState.bind(this), this.service, platform.Characteristic.On);
 
     return this.service;
   }
@@ -211,14 +219,18 @@ export class AirConditionerService extends BaseService {
   }
 
 
-  private async setSleepSwitchState(value: CharacteristicValue): Promise<void> {
-    const mode = value ? OptionalMode.Sleep : OptionalMode.Off;
+  private async setOptionalModeSwitchState(value: CharacteristicValue): Promise<void> {
+    // if optional mode is not set, skip sending command
+    if (!this.optionalMode)
+      return
+    const mode = value ? this.optionalMode : OptionalMode.Off;
+    this.log.info(`[${this.name}] set airConditionerOptionalMode to ${mode}`);
     this.sendCommandsOrFail([new Command('custom.airConditionerOptionalMode', 'setAcOptionalMode', [mode])]);
   }
 
-  private async getSleepSwitchState(): Promise<CharacteristicValue> {
+  private async getOptionalModeSwitchState(): Promise<CharacteristicValue> {
     const deviceStatus = await this.getDeviceStatus();
-    return deviceStatus['custom.airConditionerOptionalMode'].acOptionalMode.value === OptionalMode.Sleep;
+    return deviceStatus['custom.airConditionerOptionalMode'].acOptionalMode.value === this.optionalMode;
   }
 
   // Switch state is managed by the Fan service.
@@ -483,7 +495,7 @@ export class AirConditionerService extends BaseService {
         this.humidityService?.updateCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity, event.value);
         break;
       case 'custom.airConditionerOptionalMode':
-        this.sleepSwitchService?.updateCharacteristic(this.platform.Characteristic.On, event.value === OptionalMode.Sleep);
+        this.optionalModeSwitchService?.updateCharacteristic(this.platform.Characteristic.On, event.value === this.optionalMode);
         break;
       default:
         this.log.info(`[${this.name}] Ignore event updating ${event.capability} capability to ${event.value}`);
