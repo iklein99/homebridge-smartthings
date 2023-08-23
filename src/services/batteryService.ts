@@ -65,7 +65,7 @@ export class BatteryService extends BaseService {
           if (batteryLevel > 40) {
             this.log.debug(`${this.name} battery level normal`);
           } else {
-            this.log.warn(`${this.name} battery level LOW`);
+            this.log.debug(`${this.name} battery level LOW`);
           }
           resolve(batteryLevel <= 30 ?
             this.platform.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW :

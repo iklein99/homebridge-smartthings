@@ -14,6 +14,9 @@ require a lot of work to install.  It will discover devices automatically as wel
 from your smarttthings network.  This is currently under development.
 ## New in version 1.5.14
 * Support for air conditioners optional modes (i.e., Sleep, Speed, WindFree, WindFreeSleep)
+* Stop logging warning if battery is low
+* Issue with thermostat service making homebridge crash.  If we can't get a status from the thermostat we will return zero for temp to
+avoid crash.
 ## Fixed in version 1.5.13
 * Handle invalid response to "getLevel" call in lightservice.  There is a Zooz driver that 
 does not return a valid response causing homebridge to fail.

@@ -202,7 +202,10 @@ export class ThermostatService extends BaseService {
             resolve(this.deviceStatus.status.temperatureMeasurement.temperature.value);
           }
         } else {
-          throw (new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+          // reject (new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+          // For some reason, when homekit makes this call and it fails, Homebridge crashes.  So we will simply return zero.
+          this.log.warn(`Failed to get status for ${this.name}`);
+          resolve(0);
         }
       });
     });
