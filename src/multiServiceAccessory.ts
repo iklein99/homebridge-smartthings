@@ -81,9 +81,11 @@ export class MultiServiceAccessory {
         'switch',
         'airConditionerMode',
         'airConditionerFanMode',
-        'fanOscillationMode',
         'thermostatCoolingSetpoint',
         'temperatureMeasurement',
+      ],
+      optionalCapabilities: [
+        'fanOscillationMode',
         'relativeHumidityMeasurement',
         'custom.airConditionerOptionalMode',
       ],
@@ -200,6 +202,7 @@ export class MultiServiceAccessory {
     component: any,
     capabilitiesToCover: string[],
     capabilities: string[],
+    optionalCapabilities: string[],
     serviceConstructor: any,
   ): string[] {
     // this.log.debug(`Testing ${serviceConstructor.name} for capabilities ${capabilitiesToCover}`);
@@ -209,13 +212,15 @@ export class MultiServiceAccessory {
       return capabilitiesToCover;
     }
 
-    this.log.debug(`Creating instance of ${serviceConstructor.name} for capabilities ${capabilities}`);
-    const serviceInstance = new serviceConstructor(this.platform, this.accessory, componentId, capabilities, this, this.name, component);
+    const allCapabilities = capabilities.concat(optionalCapabilities.filter(e => capabilitiesToCover.includes(e)))
+
+    this.log.debug(`Creating instance of ${serviceConstructor.name} for capabilities ${allCapabilities}`);
+    const serviceInstance = new serviceConstructor(this.platform, this.accessory, componentId, allCapabilities, this, this.name, component);
     this.services.push(serviceInstance);
 
-    this.log.debug(`Registered ${serviceConstructor.name} for capabilities ${capabilities}`);
+    this.log.debug(`Registered ${serviceConstructor.name} for capabilities ${allCapabilities}`);
     // remove covered capabilities and return unused
-    return capabilitiesToCover.filter(e => !capabilities.includes(e));
+    return capabilitiesToCover.filter(e => !allCapabilities.includes(e));
   }
 
   public addComponent(componentId: string, capabilities: string[]) {
@@ -239,6 +244,7 @@ export class MultiServiceAccessory {
           component,
           capabilitiesToCover,
           entry.capabilities,
+          entry.optionalCapabilities || [],
           entry.service,
         );
       });
@@ -250,6 +256,7 @@ export class MultiServiceAccessory {
         component,
         capabilitiesToCover,
         [capability],
+        [],
         service,
       );
     });
