@@ -212,7 +212,7 @@ export class MultiServiceAccessory {
       return capabilitiesToCover;
     }
 
-    const allCapabilities = capabilities.concat(optionalCapabilities.filter(e => capabilitiesToCover.includes(e)))
+    const allCapabilities = capabilities.concat(optionalCapabilities.filter(e => capabilitiesToCover.includes(e)));
 
     this.log.debug(`Creating instance of ${serviceConstructor.name} for capabilities ${allCapabilities}`);
     const serviceInstance = new serviceConstructor(this.platform, this.accessory, componentId, allCapabilities, this, this.name, component);
