@@ -12,6 +12,9 @@
 This is a smartthings plugin for Homebridge.  This requires no access to the legacy smartthings app, and doesn't
 require a lot of work to install.  It will discover devices automatically as well as unregister devices that are removed
 from your smarttthings network.  This is currently under development.
+## New in version 1.5.15
+* Support for optional capaiblities declaration
+* AirConditionerService adds fan oscillation switch and optional mode switch only if supported by device's capabilitites
 ## New in version 1.5.14
 * Support for air conditioners optional modes (i.e., Sleep, Speed, WindFree, WindFreeSleep)
 * Stop logging warning if battery is low

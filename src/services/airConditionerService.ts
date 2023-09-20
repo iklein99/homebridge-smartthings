@@ -68,19 +68,26 @@ export class AirConditionerService extends BaseService {
     this.fanService = this.setupFan(platform, multiServiceAccessory);
 
     // Exposing this sensor is optional since some Samsung air conditioner always report 0 as relative humidity level
-    if (this.platform.config.ExposeHumiditySensorForAirConditioners) {
+    // or the device might not support it
+    if (this.isCapabilitySupported('relativeHumidityMeasurement') && this.platform.config.ExposeHumiditySensorForAirConditioners) {
       this.humidityService = this.setupHumiditySensor(platform, multiServiceAccessory);
     }
 
-    this.optionalMode = OptionalMode[this.platform.config.OptionalModeForAirConditioners];
 
-    // Expose a switch for the optional mode. 
-    // If the selected optional mode is undefined or not supported, changes to the switch will have no effect.
-    this.optionalModeSwitchService = this.setupOptionalModeSwitch(platform, multiServiceAccessory);
+    // Optional mode switch is exposed only if the related capability is suppoorted
+    if (this.isCapabilitySupported('custom.airConditionerOptionalMode')) {
+      this.optionalMode = OptionalMode[this.platform.config.OptionalModeForAirConditioners];
+
+      // Expose a switch for the optional mode. 
+      // If the selected optional mode is undefined or not supported, changes to the switch will have no effect.
+      this.optionalModeSwitchService = this.setupOptionalModeSwitch(platform, multiServiceAccessory);
+    }
 
   }
 
-
+  private isCapabilitySupported(capability): boolean {
+    return this.capabilities.find(c => c === capability) != undefined;
+  }
 
   private setupThermostat(platform: IKHomeBridgeHomebridgePlatform, multiServiceAccessory: MultiServiceAccessory): Service {
     this.log.debug(`Expose Thermostat for ${this.name}`);
@@ -126,9 +133,11 @@ export class AirConditionerService extends BaseService {
       .onGet(this.getSwitchState.bind(this))
       .onSet(this.setSwitchState.bind(this));
 
-    this.service.getCharacteristic(platform.Characteristic.SwingMode)
-      .onGet(this.getSwingMode.bind(this))
-      .onSet(this.setSwingMode.bind(this));
+    if (this.isCapabilitySupported('fanOscillationMode')) {
+      this.service.getCharacteristic(platform.Characteristic.SwingMode)
+        .onGet(this.getSwingMode.bind(this))
+        .onSet(this.setSwingMode.bind(this));
+    }
 
     this.service.getCharacteristic(platform.Characteristic.RotationSpeed)
       .onSet(this.setFanLevel.bind(this))
