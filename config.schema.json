@@ -60,6 +60,12 @@
         "required": false,
         "default": 10
       },
+      "PollSpeakersSeconds": {
+        "title": "Poll Speakers (zero = don't poll)",
+        "type": "integer",
+        "required": false,
+        "default": 20
+      },
       "PollWindowShadesSeconds": {
         "title": "Poll Window Shades (zero = don't poll)",
         "type": "integer",

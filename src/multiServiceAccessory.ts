@@ -26,6 +26,7 @@ import { ThermostatService } from './services/thermostatService';
 import { StatelessProgrammableSwitchService } from './services/statelessProgrammableSwitchService';
 import { AirConditionerService } from './services/airConditionerService';
 import { Command } from './services/smartThingsCommand';
+import { SpeakerService } from './services/speakerService';
 // type DeviceStatus = {
 //   timestamp: number;
 //   //status: Record<string, unknown>;
@@ -72,6 +73,7 @@ export class MultiServiceAccessory {
     'button': StatelessProgrammableSwitchService,
     'battery': BatteryService,
     'valve': ValveService,
+    'audioMute': SpeakerService,
   };
 
   // Maps combinations of supported capabilities to a service
@@ -129,6 +131,10 @@ export class MultiServiceAccessory {
     {
       capabilities: ['windowShade', 'switchLevel'],
       service: WindowCoveringService,
+    },
+    {
+      capabilities: ['audioMute', 'audioVolume'],
+      service: SpeakerService,
     },
   ];
 
