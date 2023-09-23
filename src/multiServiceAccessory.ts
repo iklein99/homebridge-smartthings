@@ -126,6 +126,10 @@ export class MultiServiceAccessory {
       capabilities: ['windowShade', 'windowShadeLevel'],
       service: WindowCoveringService,
     },
+    {
+      capabilities: ['windowShade', 'switchLevel'],
+      service: WindowCoveringService,
+    },
   ];
 
   protected accessory: PlatformAccessory;
