@@ -60,6 +60,7 @@ export class MultiServiceAccessory {
     'lock': LockService,
     'switch': SwitchService,
     'windowShadeLevel': WindowCoveringService,
+    'windowShade': WindowCoveringService,
     'motionSensor': MotionService,
     'waterSensor': LeakDetectorService,
     'smokeDetector': SmokeDetectorService,
