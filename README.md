@@ -12,6 +12,9 @@
 This is a smartthings plugin for Homebridge.  This requires no access to the legacy smartthings app, and doesn't
 require a lot of work to install.  It will discover devices automatically as well as unregister devices that are removed
 from your smarttthings network.  This is currently under development.
+
+## Fixed in version 1.5.20
+* Fixed discovery of devices issue where some fans were set up as lights
 ## Fixed in version 1.5.19
 * Handle multi component devices that don't have a "main" component supported by plugin
 ## Fixed in version 1.5.17

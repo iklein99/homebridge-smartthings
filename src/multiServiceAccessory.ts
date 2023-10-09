@@ -242,7 +242,7 @@ export class MultiServiceAccessory {
     // Start with comboServices and remove used capabilities to avoid duplicated sensors.
     // For example, there is no need to expose a temperature sensor in case of a thermostat which already exposes that charateristic.
     MultiServiceAccessory.comboCapabilityMap
-      .sort(e => -e.capabilities.length) // services with larger capability set first
+      .sort((a, b) => a.capabilities.length > b.capabilities.length ? -1 : 1) // services with larger capability set first
       .forEach(entry => {
         capabilitiesToCover = this.registerServiceIfMatchesCapabilities(
           componentId,
