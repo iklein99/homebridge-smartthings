@@ -27,7 +27,7 @@
     "homebridge-plugin"
   ],
   "dependencies": {
-    "homebridge-config-ui-x": "^4.50.4"
+    "homebridge-config-ui-x": "^4.51.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.14",
