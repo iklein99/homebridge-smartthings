@@ -405,6 +405,7 @@ export class AirConditionerService extends BaseService {
 
     const temp = deviceStatus.temperatureMeasurement.temperature.value;
     const unit = deviceStatus.temperatureMeasurement.temperature.unit as TemperatureUnit;
+    this.temperatureUnit = unit;
 
     if (!temp || !unit) {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.RESOURCE_DOES_NOT_EXIST);

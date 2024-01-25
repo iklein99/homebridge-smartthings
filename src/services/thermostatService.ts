@@ -68,6 +68,11 @@ export class ThermostatService extends BaseService {
   async getTargetHeatingCoolingState():Promise<CharacteristicValue> {
     this.log.debug('Received getTargetHeatingCoolingState for ' + this.name);
     return new Promise((resolve) => {
+      // If we don't have the capability of thermostatMode, then just return AUTO
+      if (this.capabilities.find((c) => c === 'thermostatMode') === undefined) {
+        resolve(this.targetHeatingCoolingState = this.platform.Characteristic.TargetHeatingCoolingState.AUTO);
+        return;
+      }
       this.getStatus().then(success => {
         let state;
         if (success) {
@@ -113,6 +118,11 @@ export class ThermostatService extends BaseService {
 
     this.targetHeatingCoolingState = value;
 
+    if (this.capabilities.find((c) => c === 'thermostatMode') === undefined) {
+      this.log.debug(`Thermostat ${this.name} does not support thermostatMode.  Ignoring request`);
+      return;
+    }
+
     let cmd = '';
     switch (value) {
       case this.platform.Characteristic.TargetHeatingCoolingState.AUTO:
@@ -149,6 +159,13 @@ export class ThermostatService extends BaseService {
     this.log.debug('Received getCurrentHeatingCoolingState() event for ' + this.name);
 
     return new Promise((resolve, reject) => {
+
+      if (this.capabilities.find((c) => c === 'thermostatMode') === undefined) {
+        this.log.debug(`Thermostat ${this.name} does not support thermostatMode.  Returning OFF`);
+        resolve(this.platform.Characteristic.CurrentHeatingCoolingState.OFF);
+        return;
+      }
+
       this.getStatus().then(success => {
         if (success) {
           let thermostatMode;

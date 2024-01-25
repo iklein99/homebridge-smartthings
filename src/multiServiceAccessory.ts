@@ -124,6 +124,12 @@ export class MultiServiceAccessory {
       service: ThermostatService,
     },
     {
+      // There is a heater out there that just supports thermostatMode and thermostatHeatingSetpoint
+      capabilities: ['temperatureMeasurement',
+        'thermostatHeatingSetpoint'],
+      service: ThermostatService,
+    },
+    {
       capabilities: ['windowShade', 'windowShadeLevel'],
       service: WindowCoveringService,
     },
