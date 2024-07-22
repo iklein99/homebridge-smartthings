@@ -54,6 +54,7 @@ export class AirConditionerService extends BaseService {
   private humidityService: Service | undefined;
   private optionalModeSwitchService: Service | undefined;
   private optionalMode: OptionalMode | undefined;
+  private lightService: Service | undefined;
 
   constructor(platform: IKHomeBridgeHomebridgePlatform, accessory: PlatformAccessory, componentId: string, capabilities: string[],
     multiServiceAccessory: MultiServiceAccessory,
@@ -73,12 +74,16 @@ export class AirConditionerService extends BaseService {
       this.humidityService = this.setupHumiditySensor(platform, multiServiceAccessory);
     }
 
+    // Check if the device supports controlling the light
+    if (this.isCapabilitySupported('switchLevel')) {
+      this.lightService = this.setupLightSwitch(platform, multiServiceAccessory);
+    }
 
     // Optional mode switch is exposed only if the related capability is suppoorted
     if (this.isCapabilitySupported('custom.airConditionerOptionalMode')) {
       this.optionalMode = OptionalMode[this.platform.config.OptionalModeForAirConditioners];
 
-      // Expose a switch for the optional mode. 
+      // Expose a switch for the optional mode.
       // If the selected optional mode is undefined or not supported, changes to the switch will have no effect.
       this.optionalModeSwitchService = this.setupOptionalModeSwitch(platform, multiServiceAccessory);
     }
@@ -177,6 +182,25 @@ export class AirConditionerService extends BaseService {
     return this.service;
   }
 
+  private setupLightSwitch(platform: IKHomeBridgeHomebridgePlatform, multiServiceAccessory: MultiServiceAccessory): Service {
+    this.log.debug(`Expose Light Switch for ${this.name}`);
+
+    this.setServiceType(platform.Service.Lightbulb); // Use Lightbulb service to control light intensity
+
+    this.service.getCharacteristic(platform.Characteristic.On)
+      .onGet(this.getLightSwitchState.bind(this))
+      .onSet(this.setLightSwitchState.bind(this));
+
+    this.service.getCharacteristic(platform.Characteristic.Brightness)
+      .onGet(this.getLightBrightness.bind(this))
+      .onSet(this.setLightBrightness.bind(this));
+
+    multiServiceAccessory.startPollingState(this.platform.config.PollSensorsSeconds, this.getLightSwitchState.bind(this), this.service,
+      platform.Characteristic.On);
+
+    return this.service;
+  }
+
   private async getHumidityLevel(): Promise<CharacteristicValue> {
     const deviceStatus = await this.getDeviceStatus();
     return deviceStatus.relativeHumidityMeasurement.humidity.value;
@@ -227,11 +251,32 @@ export class AirConditionerService extends BaseService {
     }
   }
 
+  private async getLightSwitchState(): Promise<CharacteristicValue> {
+    const deviceStatus = await this.getDeviceStatus();
+    return deviceStatus.switchLevel.level.value > 0; // Light is on if level is greater than 0
+  }
+
+  private async setLightSwitchState(value: CharacteristicValue): Promise<void> {
+    const level = value ? 100 : 0; // 100 for on, 0 for off
+    this.log.info(`[${this.name}] set light switch state to ${value}`);
+    this.sendCommandsOrFail([new Command('switchLevel', 'setLevel', [level])]);
+  }
+
+  private async getLightBrightness(): Promise<CharacteristicValue> {
+    const deviceStatus = await this.getDeviceStatus();
+    return deviceStatus.switchLevel.level.value;
+  }
+
+  private async setLightBrightness(value: CharacteristicValue): Promise<void> {
+    this.log.info(`[${this.name}] set light brightness to ${value}`);
+    this.sendCommandsOrFail([new Command('switchLevel', 'setLevel', [value])]);
+  }
 
   private async setOptionalModeSwitchState(value: CharacteristicValue): Promise<void> {
     // if optional mode is not set, skip sending command
-    if (!this.optionalMode)
-      return
+    if (!this.optionalMode) {
+      return;
+    }
     const mode = value ? this.optionalMode : OptionalMode.Off;
     this.log.info(`[${this.name}] set airConditionerOptionalMode to ${mode}`);
     this.sendCommandsOrFail([new Command('custom.airConditionerOptionalMode', 'setAcOptionalMode', [mode])]);
@@ -506,6 +551,10 @@ export class AirConditionerService extends BaseService {
         break;
       case 'custom.airConditionerOptionalMode':
         this.optionalModeSwitchService?.updateCharacteristic(this.platform.Characteristic.On, event.value === this.optionalMode);
+        break;
+      case 'switchLevel':
+        this.lightService?.updateCharacteristic(this.platform.Characteristic.On, event.value > 0);
+        this.lightService?.updateCharacteristic(this.platform.Characteristic.Brightness, event.value);
         break;
       default:
         this.log.info(`[${this.name}] Ignore event updating ${event.capability} capability to ${event.value}`);
