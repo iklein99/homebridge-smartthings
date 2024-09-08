@@ -364,7 +364,7 @@ export class MultiServiceAccessory {
 
   startPollingState(pollSeconds: number, getValue: () => Promise<CharacteristicValue>, service: Service,
     chracteristic: WithUUID<new () => Characteristic>, targetStateCharacteristic?: WithUUID<new () => Characteristic>,
-    getTargetState?: () => Promise<CharacteristicValue>): NodeJS.Timer | void {
+    getTargetState?: () => Promise<CharacteristicValue>): NodeJS.Timeout | void {
 
     if (this.platform.config.WebhookToken && this.platform.config.WebhookToken !== '') {
       return;  // Don't poll if we have a webhook token
