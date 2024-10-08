@@ -29,7 +29,6 @@
         "required": false,
         "default": ""
       },
-
       "GarageDoorMaxPoll": {
         "title": "Garage Door Max Poll",
         "type": "integer",
@@ -80,7 +79,8 @@
           "Sleep",
           "Speed",
           "WindFree",
-          "WindFreeSleep"
+          "WindFreeSleep",
+          "Quiet"
         ],
         "default": "None"
       },

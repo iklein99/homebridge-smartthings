@@ -7,12 +7,13 @@
 
 [![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
 
-# Smartthings Homebridge Plugin 
+# Smartthings Homebridge Plugin
 
 This is a smartthings plugin for Homebridge.  This requires no access to the legacy smartthings app, and doesn't
 require a lot of work to install.  It will discover devices automatically as well as unregister devices that are removed
 from your smarttthings network.  This is currently under development.
-
+## New in version 1.5.22
+* Support for Quiet mode for air conditioners
 ## Fixed in version 1.5.20
 * Fixed discovery of devices issue where some fans were set up as lights
 ## Fixed in version 1.5.19
