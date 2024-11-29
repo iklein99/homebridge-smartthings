@@ -42,7 +42,8 @@ enum OptionalMode {
   Sleep = 'sleep',
   Speed = 'speed',
   WindFree = 'windFree',
-  WindFreeSleep = 'windFreeSleep'
+  WindFreeSleep = 'windFreeSleep',
+  Quiet = 'quiet'
 }
 
 export class AirConditionerService extends BaseService {
