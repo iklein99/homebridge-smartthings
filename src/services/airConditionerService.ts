@@ -91,7 +91,7 @@ export class AirConditionerService extends BaseService {
   }
 
   private isCapabilitySupported(capability): boolean {
-    return this.capabilities.find(c => c === capability) != undefined;
+    return this.capabilities.find(c => c === capability) !== undefined;
   }
 
   private setupThermostat(platform: IKHomeBridgeHomebridgePlatform, multiServiceAccessory: MultiServiceAccessory): Service {
