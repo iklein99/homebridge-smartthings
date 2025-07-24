@@ -425,22 +425,26 @@ export class AirConditionerService extends BaseService {
     const airConditionerMode = deviceStatus.airConditionerMode.airConditionerMode.value as AirConditionerMode;
     const coolingSetpoint = this.toCelsius(deviceStatus.thermostatCoolingSetpoint.coolingSetpoint.value);
     const temperature = this.toCelsius(deviceStatus.temperatureMeasurement.temperature.value);
-    const isOff = deviceStatus.switch.switch.value === SwitchState.Off;
 
-    if (isOff) {
-      return this.platform.Characteristic.CurrentHeatingCoolingState.OFF;
+    // isFanOn is true if the ac is on
+    const isFanOn = deviceStatus.switch.switch.value === SwitchState.On;
+
+    // if the ac is on, return the actual mode
+    if (isFanOn) {
+      switch (airConditionerMode) {
+        case AirConditionerMode.Cool:
+          return CurrentHeatingCoolingState.COOL;
+        case AirConditionerMode.Heat:
+          return CurrentHeatingCoolingState.HEAT;
+        case AirConditionerMode.Auto:
+          return temperature > coolingSetpoint ? CurrentHeatingCoolingState.COOL : CurrentHeatingCoolingState.HEAT;
+        default:
+          return CurrentHeatingCoolingState.AUTO;
+      }
     }
 
-    switch (airConditionerMode) {
-      case AirConditionerMode.Cool:
-        return CurrentHeatingCoolingState.COOL;
-      case AirConditionerMode.Heat:
-        return CurrentHeatingCoolingState.HEAT;
-      case AirConditionerMode.Auto:
-        return temperature > coolingSetpoint ? CurrentHeatingCoolingState.COOL : CurrentHeatingCoolingState.HEAT;
-      default:
-        return this.platform.Characteristic.CurrentHeatingCoolingState.OFF;
-    }
+    // if ac is actually off, return off.
+    return CurrentHeatingCoolingState.OFF;
   }
 
   private async getCurrentTemperature(): Promise<CharacteristicValue> {
