@@ -245,6 +245,7 @@ export class AirConditionerService extends BaseService {
     switch (fanOscillationMode) {
       case FanOscillationMode.All:
       case FanOscillationMode.Vertical:
+      case "horizontal":
         return this.platform.Characteristic.SwingMode.SWING_ENABLED;
       case FanOscillationMode.Fixed:
         return this.platform.Characteristic.SwingMode.SWING_DISABLED;
@@ -511,7 +512,6 @@ export class AirConditionerService extends BaseService {
   }
 
   private async getDeviceStatus(): Promise<any> {
-    this.multiServiceAccessory.forceNextStatusRefresh();
     if (!await this.getStatus()) {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
